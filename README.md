@@ -30,25 +30,7 @@ Deze applicatie geeft je diepgaand inzicht in je uitgaven, helpt je patronen her
 
 ## 🚀 Installatie
 
-Je kunt Appestat op twee manieren draaien:
-
-### Optie A: Via Docker (Aanbevolen)
-
-1. **Bouw de image**
-   ```bash
-   docker build -t appestat .
-   ```
-
-2. **Start de container**
-   ```bash
-   docker run -p 5050:5050 -v $(pwd)/data:/app/data appestat
-   ```
-   *De `-v` flag zorgt ervoor dat je database en geïmporteerde bestanden bewaard blijven.*
-
-3. **Open je browser**
-   Ga naar [http://localhost:5050](http://localhost:5050)
-
-### Optie B: Lokaal (Python)
+Je kunt Appestat lokaal draaien:
 
 1. **Vereisten**
    - Python 3.9 of hoger
@@ -79,9 +61,9 @@ Je kunt Appestat op twee manieren draaien:
 
 Appestat werkt met je eigen data. Zo importeer je je bonnen:
 
-1. **Online Facturen**: Download je facturen van bestellingen (PDF) via je online Albert Heijn account en plaats ze in `data/invoices/`.
+1. **Online facturen**: Download je facturen van bestellingen (PDF) via je online Albert Heijn account en plaats ze in `data/invoices/`.
 2. **Kassabonnen**: Kassabonnen van Albert Heijn aankopen in de winkel plaats je in `data/bonnen/`. Je kunt de kassabonnen downloaden via je Albert Heijn app (iOS of Android). De snelste manier is via 'Deel Kassabon' en dan 'Save to files' waarbij je een iCloud-map kan selecteren. Alle PDF's vind je op je laptop dan terug op je bijvoorbeeld je Desktop of Downloads.
-3. **Import Starten**: 
+3. **Import starten**: 
    - Start de app en navigeer naar **Facturen**.
    - Klik op de **Importeer** knop.
    - De app verwerkt alle nieuwe bestanden automatisch.
@@ -95,7 +77,7 @@ Appestat is open source. Heb je ideeën om de "appestat" van gebruikers beter te
 - Nieuwe psychologische inzichten/features
 - Ondersteuning voor andere supermarkten
 
-Pull requests zijn welkom!
+Pull requests zijn welkom! https://github.com/twetering/appestat
 
 ## 📝 Licentie
 
