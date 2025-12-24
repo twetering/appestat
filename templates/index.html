@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mijn Uitgaven - Appestat</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* AH Brand Colors */
+            --ah-blue: #00ADE6;
+            --ah-blue-dark: #0095C8;
+            --ah-blue-darker: #007BA8;
+            --ah-orange: #FF6B00;
+            --ah-orange-light: #FF8533;
+            --ah-yellow: #FFD100;
+            --ah-green: #5CB82F;
+            --ah-red: #E13A3A;
+            
+            /* Neutral colors */
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-300: #DEE2E6;
+            --gray-400: #CED4DA;
+            --gray-500: #ADB5BD;
+            --gray-600: #6C757D;
+            --gray-700: #495057;
+            --gray-800: #343A40;
+            --gray-900: #212529;
+            
+            --white: #FFFFFF;
+            --body-bg: var(--gray-50);
+            --card-bg: var(--white);
+            --border-color: var(--gray-200);
+            --text-primary: var(--gray-900);
+            --text-secondary: var(--gray-600);
+            
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Albert Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--body-bg);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* AH Header */
+        .ah-header {
+            background: var(--ah-blue);
+            color: var(--white);
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .ah-header-top {
+            background: rgba(0,0,0,0.1);
+            font-size: 0.75rem;
+            padding: 0.25rem 0;
+        }
+        
+        .ah-header-top .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .ah-header-main {
+            padding: 0.75rem 0;
+        }
+        
+        .ah-header-main .container {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .ah-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-decoration: none;
+            color: var(--white);
+        }
+        
+        .ah-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ah-blue);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        
+        .ah-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .ah-nav a {
+            color: var(--white);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .ah-nav a:hover,
+        .ah-nav a.active {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        /* Main content */
+        main {
+            padding: 1.5rem 0 3rem;
+        }
+        
+        /* Page header */
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .page-subtitle {
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        /* Year Selector */
+        .year-selector-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .year-selector-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .year-selector-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .year-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--gray-200);
+            background: var(--white);
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        
+        .year-btn:hover {
+            border-color: var(--ah-blue);
+            color: var(--ah-blue);
+        }
+        
+        .year-btn.active {
+            background: var(--ah-blue);
+            border-color: var(--ah-blue);
+            color: white;
+        }
+        
+        @media (max-width: 640px) {
+            .year-selector-container {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
+        
+        /* Summary Cards Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .summary-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .summary-card-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .summary-card-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .summary-card-value.positive {
+            color: var(--ah-green);
+        }
+        
+        .summary-card-value.accent {
+            color: var(--ah-blue);
+        }
+        
+        /* Charts Layout */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (max-width: 900px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-wrapper {
+            height: 300px;
+            position: relative;
+        }
+        
+        /* Category bars */
+        .category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .category-item-container {
+            margin-bottom: 0.25rem;
+        }
+        
+        .category-item {
+            display: grid;
+            grid-template-columns: 200px 1fr 120px;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            transition: background 0.15s;
+        }
+        
+        .category-item.has-subcats {
+            cursor: pointer;
+        }
+        
+        .category-item.has-subcats:hover {
+            background: var(--gray-50);
+        }
+        
+        .category-item.expanded {
+            background: var(--gray-50);
+        }
+        
+        .expand-icon {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+            margin-left: 0.25rem;
+        }
+        
+        .category-percentage {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: 0.5rem;
+        }
+        
+        /* Subcategorieën */
+        .subcategory-list {
+            margin-left: 2rem;
+            padding: 0.5rem 0;
+            border-left: 2px solid var(--gray-200);
+            margin-top: 0.25rem;
+        }
+        
+        .subcategory-item {
+            display: grid;
+            grid-template-columns: 150px 1fr 80px 50px;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+        }
+        
+        .subcategory-name {
+            color: var(--text-secondary);
+        }
+        
+        .subcategory-bar-wrapper {
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .subcategory-bar {
+            height: 100%;
+            border-radius: 3px;
+        }
+        
+        .subcategory-amount {
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        .subcategory-count {
+            text-align: right;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+        
+        @media (max-width: 640px) {
+            .category-item {
+                grid-template-columns: 1fr;
+                gap: 0.25rem;
+            }
+            
+            .subcategory-list {
+                margin-left: 1rem;
+            }
+            
+            .subcategory-item {
+                grid-template-columns: 1fr 60px 40px;
+            }
+            
+            .subcategory-bar-wrapper {
+                display: none;
+            }
+        }
+        
+        .category-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .category-icon {
+            width: 24px;
+            text-align: center;
+        }
+        
+        .category-bar-wrapper {
+            height: 24px;
+            background: var(--gray-100);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .category-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .category-amount {
+            font-weight: 600;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+        
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+            background: var(--gray-50);
+        }
+        
+        .data-table td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table tbody tr:hover {
+            background: var(--gray-50);
+        }
+        
+        .data-table th:last-child,
+        .data-table td:last-child {
+            text-align: right;
+        }
+        
+        /* Savings cards */
+        .savings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        
+        .savings-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--ah-orange);
+        }
+        
+        .savings-card-title {
+            font-weight: 600;
+            color: var(--ah-orange);
+            margin-bottom: 0.5rem;
+        }
+        
+        .savings-card-tip {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .savings-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            text-align: center;
+        }
+        
+        .savings-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .savings-stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ah-green);
+        }
+        
+        .savings-stat-value.current {
+            color: var(--text-primary);
+        }
+        
+        /* Section titles */
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--ah-blue);
+            border-radius: 2px;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-bonus {
+            background: var(--ah-orange);
+            color: var(--white);
+        }
+        
+        .badge-new {
+            background: var(--ah-green);
+            color: var(--white);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--ah-blue);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background: var(--ah-blue-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--text-primary);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+        
+        /* Projection table */
+        .projection-header {
+            background: linear-gradient(135deg, var(--ah-blue) 0%, var(--ah-blue-dark) 100%);
+            color: var(--white);
+            padding: 1.25rem;
+        }
+        
+        .projection-header h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .projection-header p {
+            opacity: 0.9;
+            font-size: 0.875rem;
+        }
+        
+        .highlight-orange {
+            color: var(--ah-orange);
+            font-weight: 700;
+        }
+        
+        /* Period info */
+        .period-info {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            padding: 0.75rem;
+            background: var(--gray-100);
+            border-radius: var(--radius);
+        }
+        
+        /* Loading state */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            gap: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--ah-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Footer */
+        .ah-footer {
+            background: var(--gray-800);
+            color: var(--white);
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .footer-links a {
+            color: var(--gray-400);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+        
+        .footer-links a:hover {
+            color: var(--white);
+        }
+        
+        /* Category colors */
+        .cat-zuivel { --cat-color: #00ADE6; }
+        .cat-groente { --cat-color: #5CB82F; }
+        .cat-vlees { --cat-color: #E13A3A; }
+        .cat-brood { --cat-color: #D4A574; }
+        .cat-pasta { --cat-color: #FFB347; }
+        .cat-dranken { --cat-color: #4FC3F7; }
+        .cat-sauzen { --cat-color: #FF7043; }
+        .cat-snacks { --cat-color: #AB47BC; }
+        .cat-huishouden { --cat-color: #78909C; }
+        .cat-verzorging { --cat-color: #F48FB1; }
+        .cat-verpakking { --cat-color: #90A4AE; }
+        .cat-bezorg { --cat-color: #607D8B; }
+        .cat-overig { --cat-color: #9E9E9E; }
+    </style>
+</head>
+<body>
+    <!-- AH Header -->
+    <header class="ah-header">
+        <div class="ah-header-top">
+            <div class="container">
+                <span>Appestat - Personal Food Accountant</span>
+                <span>Open Source</span>
+            </div>
+        </div>
+        <div class="ah-header-main">
+            <div class="container">
+                <a href="/" class="ah-logo">
+                    <div class="ah-logo-icon">A</div>
+                    <span>Appestat</span>
+                </a>
+                <nav class="ah-nav">
+                    <a href="/" class="active">Dashboard</a>
+                    <a href="/search">Producten</a>
+                    <a href="/invoices">Facturen</a>
+                    <a href="/categories">Categorieën</a>
+                    <a href="/years">Jaren</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">Mijn Uitgaven Overzicht</h1>
+                <p class="page-subtitle">Inzicht in je uitgaven</p>
+            </div>
+            
+            <div id="app">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Gegevens worden geladen...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="ah-footer">
+        <div class="container">
+            <div class="footer-content">
+                <span>© Appestat</span>
+                <div class="footer-links">
+                    <a href="https://www.ah.nl" target="_blank">Naar ah.nl</a>
+                    <a href="/invoices">Facturen beheren</a>
+                    <a href="/categories">Categorieën aanpassen</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        const categoryColors = {
+            'Zuivel & Eieren': '#00ADE6',
+            'Groente & Fruit': '#5CB82F',
+            'Vlees & Vis': '#E13A3A',
+            'Brood & Bakkerij': '#D4A574',
+            'Pasta, Rijst & Granen': '#FFB347',
+            'Dranken': '#4FC3F7',
+            'Sauzen & Specerijen': '#FF7043',
+            'Snacks & Zoetwaren': '#AB47BC',
+            'Huishouden': '#78909C',
+            'Persoonlijke Verzorging': '#F48FB1',
+            'Verpakking & Statiegeld': '#90A4AE',
+            'Bezorgkosten': '#607D8B',
+            'Abonnementen': '#9C27B0',
+            'Overig': '#9E9E9E'
+        };
+        
+        const categoryIcons = {
+            'Zuivel & Eieren': '🥛',
+            'Groente & Fruit': '🥦',
+            'Vlees & Vis': '🥩',
+            'Brood & Bakkerij': '🍞',
+            'Pasta, Rijst & Granen': '🍝',
+            'Dranken': '🥤',
+            'Sauzen & Specerijen': '🧂',
+            'Snacks & Zoetwaren': '🍫',
+            'Huishouden': '🧹',
+            'Persoonlijke Verzorging': '🧴',
+            'Verpakking & Statiegeld': '📦',
+            'Bezorgkosten': '🚚',
+            'Abonnementen': '⭐',
+            'Overig': '📋'
+        };
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(amount || 0);
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('nl-NL', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        let currentYear = null;
+        let availableYears = [];
+        
+        async function loadData(year = null) {
+            try {
+                // First load to get available years
+                const url = year ? `/api/analysis?year=${year}` : '/api/analysis';
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                // Store available years
+                availableYears = data.available_years || [];
+                
+                // Default to most recent year on first load
+                if (!year && availableYears.length > 0) {
+                    currentYear = availableYears[0];  // Most recent
+                    // Reload with the most recent year
+                    return loadData(currentYear);
+                }
+                
+                currentYear = year;
+                renderDashboard(data);
+            } catch (error) {
+                document.getElementById('app').innerHTML = `
+                    <div class="loading">
+                        <p style="color: var(--ah-red);">Fout bij laden: ${error.message}</p>
+                        <button class="btn btn-primary" onclick="loadData()">Opnieuw proberen</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function changeYear(year) {
+            if (year === 'all') {
+                currentYear = null;
+                loadData(null);
+            } else {
+                loadData(year);
+            }
+        }
+        
+        function renderDashboard(data) {
+            const app = document.getElementById('app');
+            const s = data.summary;
+            const years = data.available_years || availableYears;
+            
+            app.innerHTML = `
+                <!-- Year Selector -->
+                <div class="year-selector-container">
+                    <div class="year-selector-label">
+                        <span style="font-size: 1.25rem;">📊</span>
+                        <span>Bekijk jaar:</span>
+                    </div>
+                    <div class="year-selector-buttons">
+                        ${years.map(y => `
+                            <button class="year-btn ${currentYear === y ? 'active' : ''}" 
+                                    onclick="changeYear('${y}')">
+                                ${y}
+                            </button>
+                        `).join('')}
+                        <button class="year-btn ${!currentYear ? 'active' : ''}" 
+                                onclick="changeYear('all')">
+                            Alles
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-card-label">Totaal Uitgegeven</div>
+                        <div class="summary-card-value">${formatCurrency(s.total_spent)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">Bonus Bespaard</div>
+                        <div class="summary-card-value positive">${formatCurrency(s.total_savings)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">Bestellingen</div>
+                        <div class="summary-card-value accent">${s.total_invoices}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">Gem. per Bestelling</div>
+                        <div class="summary-card-value">${formatCurrency(s.avg_per_invoice)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">Gem. per Maand</div>
+                        <div class="summary-card-value">${formatCurrency(s.avg_monthly)}</div>
+                    </div>
+                </div>
+                
+                <!-- Period info -->
+                <div class="period-info">
+                    📅 Periode: ${formatDate(s.date_range.start)} t/m ${formatDate(s.date_range.end)}
+                </div>
+                
+                <!-- Charts -->
+                <div class="charts-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Verdeling per Categorie</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-wrapper">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Uitgaven per Maand</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-wrapper">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category breakdown -->
+                <div class="section">
+                    <h2 class="section-title">Uitgaven per Categorie</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="category-list">
+                                ${renderCategoryBars(data.category_totals, s.total_spent, data.subcategory_totals || {})}
+                            </div>
+                            <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
+                                💡 Klik op een categorie om subcategorieën te bekijken
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Savings options -->
+                <div class="section">
+                    <h2 class="section-title">Besparingsmogelijkheden</h2>
+                    <div class="savings-grid">
+                        ${data.savings_options.map(opt => `
+                            <div class="savings-card">
+                                <div class="savings-card-title">${opt.category}</div>
+                                <div class="savings-card-tip">${opt.tip}</div>
+                                <div class="savings-stats">
+                                    <div>
+                                        <div class="savings-stat-label">Nu</div>
+                                        <div class="savings-stat-value current">${formatCurrency(opt.current_spend)}</div>
+                                    </div>
+                                    <div>
+                                        <div class="savings-stat-label">Besparing</div>
+                                        <div class="savings-stat-value">${formatCurrency(opt.potential_savings)}</div>
+                                    </div>
+                                    <div>
+                                        <div class="savings-stat-label">30 Jaar</div>
+                                        <div class="savings-stat-value">${formatCurrency(opt.thirty_year_impact)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- Smart insights section (loaded async) -->
+                <div id="smart-insights-container"></div>
+                
+                <!-- 30 Year projection -->
+                <div class="section">
+                    <h2 class="section-title">30-Jaar Projectie</h2>
+                    <div class="card" style="overflow: hidden;">
+                        <div class="projection-header">
+                            <h3>💰 Wat kost dit product over 30 jaar?</h3>
+                            <p>Gebaseerd op je huidige aankooppatroon</p>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Per Maand</th>
+                                    <th>Per Jaar</th>
+                                    <th>30 Jaar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(data.thirty_year_projection).map(([name, p]) => `
+                                    <tr>
+                                        <td>${name}</td>
+                                        <td>${formatCurrency(p.monthly)}</td>
+                                        <td>${formatCurrency(p.yearly)}</td>
+                                        <td class="highlight-orange">${formatCurrency(p.thirty_years)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Top products -->
+                <div class="section">
+                    <h2 class="section-title">Top 20 Producten</h2>
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Product</th>
+                                    <th>Categorie</th>
+                                    <th>Aantal</th>
+                                    <th>Totaal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.top_products.map((p, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td>
+                                            <a href="#" onclick="showProductModal('${escapeJs(p.name)}'); return false;" 
+                                               style="color: var(--text-primary); text-decoration: none; cursor: pointer;"
+                                               onmouseover="this.style.color='var(--ah-blue)'"
+                                               onmouseout="this.style.color='var(--text-primary)'">
+                                                ${p.name}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="/categories" style="color: ${categoryColors[p.category] || '#9E9E9E'}; text-decoration: none; cursor: pointer;"
+                                               title="Bekijk categorie">
+                                                ${categoryIcons[p.category] || '📋'} ${p.category}
+                                            </a>
+                                            ${p.subcategory ? `<br><span style="font-size: 0.75rem; color: var(--text-secondary);">${p.subcategory}</span>` : ''}
+                                        </td>
+                                        <td>${p.count}×</td>
+                                        <td><strong>${formatCurrency(p.total)}</strong></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Year comparison if multiple years -->
+                ${Object.keys(data.yearly_totals || {}).length > 1 ? `
+                <div class="section">
+                    <h2 class="section-title">Uitgaven per Jaar</h2>
+                    <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                        ${Object.entries(data.yearly_totals).map(([year, total]) => `
+                            <div class="summary-card">
+                                <div class="summary-card-label">${year}</div>
+                                <div class="summary-card-value">${formatCurrency(total)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            // Render charts
+            renderCategoryChart(data.category_totals);
+            renderMonthlyChart(data.monthly_totals);
+        }
+        
+        // Global variable to store subcategory data
+        let subcategoryData = {};
+        
+        function renderCategoryBars(categoryTotals, totalSpent, subcatTotals = {}) {
+            const maxValue = Math.max(...Object.values(categoryTotals));
+            subcategoryData = subcatTotals; // Store for later use
+            
+            return Object.entries(categoryTotals)
+                .sort((a, b) => b[1] - a[1])
+                .map(([category, amount]) => {
+                    const percentage = ((amount / totalSpent) * 100).toFixed(1);
+                    const barWidth = ((amount / maxValue) * 100).toFixed(1);
+                    const color = categoryColors[category] || '#9E9E9E';
+                    const icon = categoryIcons[category] || '📋';
+                    const hasSubcats = subcatTotals[category] && Object.keys(subcatTotals[category]).length > 0;
+                    const catId = category.replace(/[^a-zA-Z]/g, '');
+                    
+                    let subcatHtml = '';
+                    if (hasSubcats) {
+                        const subcats = Object.entries(subcatTotals[category])
+                            .sort((a, b) => b[1].total - a[1].total);
+                        const maxSubcat = Math.max(...subcats.map(s => s[1].total));
+                        
+                        subcatHtml = `
+                            <div class="subcategory-list" id="subcats-${catId}" style="display: none;">
+                                ${subcats.map(([subcat, data]) => {
+                                    const subBarWidth = ((data.total / maxSubcat) * 100).toFixed(1);
+                                    return `
+                                        <div class="subcategory-item">
+                                            <div class="subcategory-name">${subcat}</div>
+                                            <div class="subcategory-bar-wrapper">
+                                                <div class="subcategory-bar" style="width: ${subBarWidth}%; background: ${color}88"></div>
+                                            </div>
+                                            <div class="subcategory-amount">${formatCurrency(data.total)}</div>
+                                            <div class="subcategory-count">${data.count}×</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        `;
+                    }
+                    
+                    return `
+                        <div class="category-item-container">
+                            <div class="category-item ${hasSubcats ? 'has-subcats' : ''}" 
+                                 onclick="${hasSubcats ? `toggleSubcats('${catId}', this)` : ''}">
+                                <div class="category-name">
+                                    <span class="category-icon">${icon}</span>
+                                    ${category}
+                                    ${hasSubcats ? `<span class="expand-icon">▶</span>` : ''}
+                                </div>
+                                <div class="category-bar-wrapper">
+                                    <div class="category-bar" style="width: ${barWidth}%; background: ${color}"></div>
+                                </div>
+                                <div class="category-amount" style="color: ${color}">
+                                    ${formatCurrency(amount)}
+                                    <span class="category-percentage">${percentage}%</span>
+                                </div>
+                            </div>
+                            ${subcatHtml}
+                        </div>
+                    `;
+                }).join('');
+        }
+        
+        function toggleSubcats(catId, element) {
+            const subcatList = document.getElementById(`subcats-${catId}`);
+            const expandIcon = element.querySelector('.expand-icon');
+            
+            if (subcatList.style.display === 'none') {
+                subcatList.style.display = 'block';
+                expandIcon.textContent = '▼';
+                element.classList.add('expanded');
+            } else {
+                subcatList.style.display = 'none';
+                expandIcon.textContent = '▶';
+                element.classList.remove('expanded');
+            }
+        }
+        
+        function renderCategoryChart(categoryTotals) {
+            const ctx = document.getElementById('categoryChart');
+            if (!ctx) return;
+            
+            const labels = Object.keys(categoryTotals);
+            const colors = labels.map(l => categoryColors[l] || '#9E9E9E');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: Object.values(categoryTotals),
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.label}: ${formatCurrency(ctx.raw)}`
+                            }
+                        }
+                    },
+                    cutout: '55%'
+                }
+            });
+        }
+        
+        function renderMonthlyChart(monthlyTotals) {
+            const ctx = document.getElementById('monthlyChart');
+            if (!ctx) return;
+            
+            const labels = Object.keys(monthlyTotals).map(m => {
+                const [y, mo] = m.split('-');
+                return new Date(y, mo - 1).toLocaleDateString('nl-NL', { month: 'short' });
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: Object.values(monthlyTotals),
+                        backgroundColor: '#00ADE6',
+                        borderRadius: 4,
+                        barThickness: 'flex',
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => formatCurrency(ctx.raw)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: v => '€' + v
+                            },
+                            grid: { color: '#E9ECEF' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function escapeJs(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+        
+        async function showProductModal(productName) {
+            // Create modal backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'product-modal-backdrop';
+            backdrop.style.cssText = `
+                position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+                display: flex; align-items: center; justify-content: center;
+                z-index: 1000; animation: fadeIn 0.2s ease;
+            `;
+            backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+            
+            // Loading state
+            backdrop.innerHTML = `
+                <div style="background: var(--card-bg); border-radius: 16px; width: 90%; max-width: 800px; 
+                            max-height: 90vh; overflow: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
+                    <div style="padding: 2rem; text-align: center;">
+                        <div class="loading-spinner" style="margin: 0 auto;"></div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary);">Product laden...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(backdrop);
+            
+            try {
+                const response = await fetch(`/api/products/details/${encodeURIComponent(productName)}`);
+                const product = await response.json();
+                
+                if (product.error) throw new Error(product.error);
+                
+                const trendIcon = product.price_trend?.direction === 'up' ? '📈' : 
+                                  product.price_trend?.direction === 'down' ? '📉' : '➡️';
+                const trendColor = product.price_trend?.direction === 'up' ? 'var(--ah-red)' : 
+                                   product.price_trend?.direction === 'down' ? 'var(--ah-green)' : 'var(--text-secondary)';
+                
+                backdrop.innerHTML = `
+                    <div style="background: var(--card-bg); border-radius: 16px; width: 90%; max-width: 800px; 
+                                max-height: 90vh; overflow: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
+                        <!-- Header -->
+                        <div style="background: var(--ah-blue); color: white; padding: 1.5rem; position: relative;">
+                            <button onclick="document.getElementById('product-modal-backdrop').remove()" 
+                                    style="position: absolute; right: 1rem; top: 1rem; background: rgba(255,255,255,0.2); 
+                                           border: none; color: white; width: 32px; height: 32px; border-radius: 50%; 
+                                           cursor: pointer; font-size: 1.2rem;">×</button>
+                            <h2 style="margin: 0; font-size: 1.5rem;">${product.original_name}</h2>
+                            <p style="margin: 0.5rem 0 0; opacity: 0.9;">
+                                ${categoryIcons[product.category] || '📋'} ${product.category}
+                            </p>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 1.5rem; 
+                                    background: var(--gray-50); border-bottom: 1px solid var(--border-color);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700; color: var(--ah-blue);">
+                                    ${formatCurrency(product.total_spent)}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">TOTAAL UITGEGEVEN</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700;">
+                                    ${product.total_quantity}×
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">GEKOCHT</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700;">
+                                    ${formatCurrency(product.avg_unit_price)}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">GEM. PRIJS</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700; color: ${trendColor};">
+                                    ${trendIcon} ${Math.abs(product.price_trend?.percentage || 0)}%
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">PRIJSTREND</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 30 jaar projectie -->
+                        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                            <h3 style="margin: 0 0 1rem; font-size: 1rem;">💰 30-Jaar Projectie</h3>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${formatCurrency(product.projection.monthly)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">per maand</div>
+                                </div>
+                                <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${formatCurrency(product.projection.yearly)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">per jaar</div>
+                                </div>
+                                <div style="background: linear-gradient(135deg, var(--ah-orange) 0%, #FF8533 100%); 
+                                            padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${formatCurrency(product.projection.thirty_years)}</div>
+                                    <div style="font-size: 0.75rem; opacity: 0.9;">over 30 jaar</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Prijshistorie -->
+                        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                            <h3 style="margin: 0 0 1rem; font-size: 1rem;">📊 Prijshistorie</h3>
+                            <div style="height: 200px;">
+                                <canvas id="productPriceChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Aankopen -->
+                        <div style="padding: 1.5rem;">
+                            <h3 style="margin: 0 0 1rem; font-size: 1rem;">📋 Aankopen (${product.price_history.length})</h3>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--border-color);">
+                                            <th style="text-align: left; padding: 0.5rem;">Datum</th>
+                                            <th style="text-align: left; padding: 0.5rem;">Factuur</th>
+                                            <th style="text-align: right; padding: 0.5rem;">Aantal</th>
+                                            <th style="text-align: right; padding: 0.5rem;">Prijs/stuk</th>
+                                            <th style="text-align: right; padding: 0.5rem;">Totaal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${product.price_history.map(h => `
+                                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                                <td style="padding: 0.5rem;">${formatDate(h.invoice_date)}</td>
+                                                <td style="padding: 0.5rem;">
+                                                    <a href="/invoice/${h.invoice_id}" style="color: var(--ah-blue);">
+                                                        ${h.invoice_number || '#' + h.invoice_id}
+                                                    </a>
+                                                </td>
+                                                <td style="text-align: right; padding: 0.5rem;">${h.quantity}×</td>
+                                                <td style="text-align: right; padding: 0.5rem;">${formatCurrency(h.unit_price)}</td>
+                                                <td style="text-align: right; padding: 0.5rem; font-weight: 600;">${formatCurrency(h.price)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Render price chart
+                const ctx = document.getElementById('productPriceChart');
+                if (ctx && product.price_history.length > 1) {
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: product.price_history.map(h => formatDate(h.invoice_date)),
+                            datasets: [{
+                                label: 'Prijs per stuk',
+                                data: product.price_history.map(h => h.unit_price),
+                                borderColor: '#00ADE6',
+                                backgroundColor: 'rgba(0,173,230,0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#00ADE6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => formatCurrency(ctx.raw)
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { display: false },
+                                y: {
+                                    beginAtZero: false,
+                                    ticks: { callback: v => '€' + v.toFixed(2) },
+                                    grid: { color: '#E9ECEF' }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+            } catch (error) {
+                backdrop.innerHTML = `
+                    <div style="background: var(--card-bg); border-radius: 16px; padding: 2rem; text-align: center;">
+                        <p style="color: var(--ah-red);">Fout: ${error.message}</p>
+                        <button onclick="document.getElementById('product-modal-backdrop').remove()" 
+                                class="btn btn-primary" style="margin-top: 1rem;">Sluiten</button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Add fade-in animation
+        const style = document.createElement('style');
+        style.textContent = '@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }';
+        document.head.appendChild(style);
+        
+        async function loadSmartInsights() {
+            try {
+                const response = await fetch('/api/insights/savings');
+                const insights = await response.json();
+                renderSmartInsights(insights);
+            } catch (error) {
+                console.error('Failed to load smart insights:', error);
+            }
+        }
+        
+        function renderSmartInsights(insights) {
+            const container = document.getElementById('smart-insights-container');
+            if (!container) return;
+            
+            let html = '';
+            
+            // Price increases
+            if (insights.price_increases?.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">📈 Prijsstijgingen</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; margin-top: -0.5rem;">
+                            Deze producten zijn duurder geworden sinds je eerste aankoop
+                        </p>
+                        <div class="card">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Eerste prijs</th>
+                                        <th>Huidige prijs</th>
+                                        <th>Stijging</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${insights.price_increases.slice(0, 5).map(p => `
+                                        <tr>
+                                            <td>
+                                                <a href="#" onclick="showProductModal('${escapeJs(p.name)}'); return false;" 
+                                                   style="color: inherit; text-decoration: none;">
+                                                    ${p.name}
+                                                </a>
+                                            </td>
+                                            <td>${formatCurrency(p.first_price)}</td>
+                                            <td>${formatCurrency(p.last_price)}</td>
+                                            <td style="color: var(--ah-red); font-weight: 600;">+${p.change_pct}%</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // A-merk vs huismerk
+            if (insights.premium_vs_huismerk?.length > 0) {
+                const totalAmerk = insights.premium_vs_huismerk.reduce((sum, p) => sum + p.amerk_spent, 0);
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">🏷️ A-Merk vs Huismerk Analyse</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; margin-top: -0.5rem;">
+                            Je geeft <strong style="color: var(--ah-orange);">${formatCurrency(totalAmerk)}</strong> uit aan A-merken. 
+                            Overweeg huismerk alternatieven voor besparing.
+                        </p>
+                        <div class="card">
+                            <div class="card-body">
+                                ${insights.premium_vs_huismerk.slice(0, 6).map(p => `
+                                    <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; 
+                                                border-bottom: 1px solid var(--border-color);">
+                                        <div style="flex: 1; font-weight: 500;">${p.category}</div>
+                                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                            <div style="background: var(--ah-blue); height: 8px; border-radius: 4px; 
+                                                        width: ${Math.max(20, (100 - p.amerk_percentage))}px;" 
+                                                 title="Huismerk: ${formatCurrency(p.huismerk_spent)}"></div>
+                                            <div style="background: var(--ah-orange); height: 8px; border-radius: 4px; 
+                                                        width: ${Math.max(20, p.amerk_percentage)}px;" 
+                                                 title="A-merk: ${formatCurrency(p.amerk_spent)}"></div>
+                                        </div>
+                                        <div style="min-width: 80px; text-align: right; font-weight: 600; color: var(--ah-orange);">
+                                            ${p.amerk_percentage}% A-merk
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Impulse buys
+            if (insights.impulse_buys?.length > 0) {
+                const totalImpulse = insights.impulse_buys.reduce((sum, p) => sum + p.price, 0);
+                html += `
+                    <div class="section">
+                        <h2 class="section-title">🛒 Eenmalige Aankopen</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; margin-top: -0.5rem;">
+                            Producten die je maar één keer hebt gekocht (totaal: ${formatCurrency(totalImpulse)}). 
+                            Mogelijk impulsaankopen?
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            ${insights.impulse_buys.slice(0, 8).map(p => `
+                                <span style="background: var(--gray-100); padding: 0.5rem 0.75rem; border-radius: 20px; 
+                                             font-size: 0.85rem; cursor: pointer;"
+                                      onclick="showProductModal('${escapeJs(p.name)}')">
+                                    ${p.name} <span style="color: var(--text-secondary);">${formatCurrency(p.price)}</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        loadData();
+        // Load smart insights after main data
+        setTimeout(loadSmartInsights, 500);
+    </script>
+</body>
+</html>

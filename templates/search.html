@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Producten Zoeken - Appestat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ah-blue: #00ADE6;
+            --ah-blue-dark: #0095C8;
+            --ah-orange: #FF6B00;
+            --ah-green: #5CB82F;
+            --ah-red: #E13A3A;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-600: #6C757D;
+            --gray-800: #343A40;
+            --gray-900: #212529;
+            --white: #FFFFFF;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Albert Sans', -apple-system, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.5;
+        }
+        
+        .ah-header {
+            background: var(--ah-blue);
+            color: var(--white);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+        
+        .header-content { display: flex; align-items: center; gap: 2rem; }
+        
+        .ah-logo {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-weight: 700; font-size: 1.5rem;
+            text-decoration: none; color: var(--white);
+        }
+        
+        .ah-logo-icon {
+            width: 40px; height: 40px; background: var(--white);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; color: var(--ah-blue);
+            font-weight: 700; font-size: 1.25rem;
+        }
+        
+        .ah-nav { display: flex; gap: 0.5rem; }
+        
+        .ah-nav a {
+            color: var(--white); text-decoration: none;
+            padding: 0.5rem 1rem; border-radius: var(--radius);
+            font-weight: 500; transition: background 0.2s;
+        }
+        
+        .ah-nav a:hover, .ah-nav a.active { background: rgba(255,255,255,0.15); }
+        
+        main { padding: 1.5rem 0 3rem; }
+        
+        .page-header { margin-bottom: 1.5rem; }
+        .page-title { font-size: 1.75rem; font-weight: 700; }
+        .page-subtitle { color: var(--gray-600); margin-top: 0.25rem; }
+        
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .card-title { font-size: 1rem; font-weight: 600; }
+        .card-body { padding: 1.25rem; }
+        
+        /* Search box */
+        .search-box {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 0.875rem 1.25rem;
+            font-size: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .search-input:focus {
+            border-color: var(--ah-blue);
+        }
+        
+        .search-input::placeholder {
+            color: var(--gray-600);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.625rem 1.25rem; border-radius: var(--radius);
+            font-weight: 600; font-size: 0.875rem; cursor: pointer;
+            text-decoration: none; border: none; transition: all 0.2s;
+        }
+        
+        .btn-primary { background: var(--ah-blue); color: var(--white); }
+        .btn-primary:hover { background: var(--ah-blue-dark); }
+        .btn-secondary { background: var(--gray-100); color: var(--gray-800); }
+        .btn-secondary:hover { background: var(--gray-200); }
+        .btn-success { background: var(--ah-green); color: var(--white); }
+        .btn-success:hover { background: #4FA525; }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Selection toolbar */
+        .selection-toolbar {
+            background: var(--ah-blue);
+            color: var(--white);
+            padding: 1rem 1.25rem;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        
+        .selection-toolbar.active { display: flex; }
+        
+        .selection-info {
+            font-weight: 600;
+        }
+        
+        .selection-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .selection-actions select {
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            border: none;
+            font-size: 0.875rem;
+        }
+        
+        /* Product table */
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .product-table th,
+        .product-table td {
+            padding: 0.875rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .product-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-600);
+        }
+        
+        .product-table tr:hover {
+            background: var(--gray-50);
+        }
+        
+        .product-table tr.selected {
+            background: rgba(0, 173, 230, 0.1);
+        }
+        
+        .product-name {
+            color: var(--gray-900);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .product-name:hover {
+            color: var(--ah-blue);
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .category-badge:hover {
+            opacity: 0.8;
+        }
+        
+        .subcategory-badge {
+            display: inline-block;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .subcategory-badge:hover {
+            opacity: 0.8;
+        }
+        
+        .checkbox-cell {
+            width: 40px;
+        }
+        
+        .checkbox-cell input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        /* Stats */
+        .stats-row {
+            display: flex;
+            gap: 2rem;
+            padding: 1rem 1.25rem;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            background: var(--white);
+        }
+        
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+        
+        .modal-header {
+            background: var(--ah-blue);
+            color: var(--white);
+            padding: 1.5rem;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-600);
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--gray-100);
+            border-radius: var(--radius);
+            text-align: center;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="ah-header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="ah-logo">
+                    <span class="ah-logo-icon">ah</span>
+                    <span>Appestat</span>
+                </a>
+                <nav class="ah-nav">
+                    <a href="/">Dashboard</a>
+                    <a href="/search" class="active">Producten</a>
+                    <a href="/invoices">Facturen</a>
+                    <a href="/categories">Categorieën</a>
+                    <a href="/years">Jaren</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">🔍 Producten Zoeken</h1>
+                <p class="page-subtitle">Zoek, filter en beheer producten en hun categorieën</p>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="search-input" class="search-input" 
+                       placeholder="Zoek producten (bijv. 'melk', 'Red Bull', 'pasta')...">
+                <button class="btn btn-primary" onclick="searchProducts()">
+                    🔍 Zoeken
+                </button>
+            </div>
+            
+            <div class="filters">
+                <select id="category-filter" class="filter-select" onchange="onCategoryChange()">
+                    <option value="">Alle categorieën</option>
+                </select>
+                <select id="subcategory-filter" class="filter-select" onchange="filterProducts()">
+                    <option value="">Alle subcategorieën</option>
+                </select>
+                <select id="sort-filter" class="filter-select" onchange="filterProducts()">
+                    <option value="total_desc">Hoogste uitgaven eerst</option>
+                    <option value="total_asc">Laagste uitgaven eerst</option>
+                    <option value="name_asc">A-Z</option>
+                    <option value="name_desc">Z-A</option>
+                    <option value="count_desc">Meest gekocht</option>
+                    <option value="price_desc">Hoogste prijs</option>
+                </select>
+            </div>
+            
+            <div class="card">
+                <div class="selection-toolbar" id="selection-toolbar">
+                    <span class="selection-info">
+                        <span id="selected-count">0</span> producten geselecteerd
+                    </span>
+                    <div class="selection-actions">
+                        <select id="bulk-category-select" onchange="onBulkCategoryChange()">
+                            <option value="">Kies categorie...</option>
+                        </select>
+                        <select id="bulk-subcategory-select">
+                            <option value="">Kies subcategorie...</option>
+                        </select>
+                        <button class="btn btn-success" onclick="bulkUpdateCategory()">
+                            ✓ Categorie Toewijzen
+                        </button>
+                        <button class="btn btn-success" onclick="bulkUpdateSubcategory()">
+                            ✓ Subcategorie Toewijzen
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearSelection()">
+                            ✕ Deselecteren
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="stats-row" id="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-label">Producten</span>
+                        <span class="stat-value" id="stat-products">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Totaal Uitgegeven</span>
+                        <span class="stat-value" id="stat-total">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Gemiddelde Prijs</span>
+                        <span class="stat-value" id="stat-avg">-</span>
+                    </div>
+                </div>
+                
+                <div id="results-container">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>Typ een zoekterm of selecteer een categorie om producten te bekijken</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        let allProducts = [];
+        let filteredProducts = [];
+        let selectedProducts = new Set();
+        let categories = [];
+        let subcategories = {};  // Subcats per category
+        
+        const categoryColors = {
+            'Zuivel & Eieren': '#00ADE6',
+            'Groente & Fruit': '#5CB82F',
+            'Vlees & Vis': '#E13A3A',
+            'Brood & Bakkerij': '#D4A574',
+            'Pasta, Rijst & Granen': '#FFB347',
+            'Dranken': '#4FC3F7',
+            'Sauzen & Specerijen': '#FF7043',
+            'Snacks & Zoetwaren': '#AB47BC',
+            'Huishouden': '#78909C',
+            'Persoonlijke Verzorging': '#F48FB1',
+            'Verpakking & Statiegeld': '#90A4AE',
+            'Bezorgkosten': '#607D8B',
+            'Abonnementen': '#9C27B0',
+            'Overig': '#9E9E9E'
+        };
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(amount || 0);
+        }
+        
+        async function loadData() {
+            try {
+                const [productsRes, categoriesRes, subcatsRes] = await Promise.all([
+                    fetch('/api/products/unique'),
+                    fetch('/api/categories'),
+                    fetch('/api/subcategories')
+                ]);
+                
+                allProducts = await productsRes.json();
+                categories = await categoriesRes.json();
+                const subcatList = await subcatsRes.json();
+                
+                // Organize subcategories by category
+                subcategories = {};
+                subcatList.forEach(s => {
+                    if (!subcategories[s.category_name]) {
+                        subcategories[s.category_name] = [];
+                    }
+                    subcategories[s.category_name].push(s);
+                });
+                
+                // Populate category filters
+                const categoryFilter = document.getElementById('category-filter');
+                const bulkSelect = document.getElementById('bulk-category-select');
+                
+                categories.forEach(cat => {
+                    categoryFilter.innerHTML += `<option value="${cat.name}">${cat.icon} ${cat.name} (${cat.product_count})</option>`;
+                    bulkSelect.innerHTML += `<option value="${cat.name}">${cat.icon} ${cat.name}</option>`;
+                });
+                
+                // Show all products initially
+                filterProducts();
+            } catch (error) {
+                console.error('Failed to load data:', error);
+            }
+        }
+        
+        function onCategoryChange() {
+            const category = document.getElementById('category-filter').value;
+            const subcatFilter = document.getElementById('subcategory-filter');
+            
+            // Reset and repopulate subcategory filter
+            subcatFilter.innerHTML = '<option value="">Alle subcategorieën</option>';
+            
+            if (category && subcategories[category]) {
+                subcategories[category].forEach(s => {
+                    subcatFilter.innerHTML += `<option value="${s.name}">${s.icon} ${s.name}</option>`;
+                });
+                subcatFilter.style.display = 'block';
+            } else {
+                subcatFilter.style.display = category ? 'block' : 'none';
+            }
+            
+            filterProducts();
+        }
+        
+        function searchProducts() {
+            filterProducts();
+        }
+        
+        function filterProducts() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const category = document.getElementById('category-filter').value;
+            const subcategory = document.getElementById('subcategory-filter').value;
+            const sort = document.getElementById('sort-filter').value;
+            
+            // Filter
+            filteredProducts = allProducts.filter(p => {
+                const matchesSearch = !search || p.name.toLowerCase().includes(search);
+                const matchesCategory = !category || p.category === category;
+                const matchesSubcategory = !subcategory || p.subcategory === subcategory;
+                return matchesSearch && matchesCategory && matchesSubcategory;
+            });
+            
+            // Sort
+            filteredProducts.sort((a, b) => {
+                switch (sort) {
+                    case 'total_asc': return a.total_spent - b.total_spent;
+                    case 'total_desc': return b.total_spent - a.total_spent;
+                    case 'name_asc': return a.name.localeCompare(b.name);
+                    case 'name_desc': return b.name.localeCompare(a.name);
+                    case 'count_desc': return b.total_quantity - a.total_quantity;
+                    case 'price_desc': return b.avg_unit_price - a.avg_unit_price;
+                    default: return 0;
+                }
+            });
+            
+            renderProducts();
+            updateStats();
+        }
+        
+        function renderProducts() {
+            const container = document.getElementById('results-container');
+            
+            if (filteredProducts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">😕</div>
+                        <p>Geen producten gevonden</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" onchange="toggleSelectAll(this)" id="select-all">
+                            </th>
+                            <th>Product</th>
+                            <th>Categorie</th>
+                            <th>Subcategorie</th>
+                            <th>Keer Gekocht</th>
+                            <th>Gem. Prijs</th>
+                            <th>Totaal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredProducts.map(p => `
+                            <tr class="${selectedProducts.has(p.name) ? 'selected' : ''}" data-name="${escapeHtml(p.name)}">
+                                <td class="checkbox-cell">
+                                    <input type="checkbox" 
+                                           ${selectedProducts.has(p.name) ? 'checked' : ''}
+                                           onchange="toggleSelect('${escapeJs(p.name)}', this)">
+                                </td>
+                                <td>
+                                    <a class="product-name" onclick="showProductModal('${escapeJs(p.name)}')">
+                                        ${escapeHtml(p.name)}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="category-badge" 
+                                          style="background: ${categoryColors[p.category] || '#9E9E9E'}20; 
+                                                 color: ${categoryColors[p.category] || '#9E9E9E'};"
+                                          onclick="document.getElementById('category-filter').value='${p.category}'; onCategoryChange();">
+                                        ${p.category}
+                                    </span>
+                                </td>
+                                <td>
+                                    ${p.subcategory ? `
+                                        <span class="subcategory-badge" 
+                                              style="background: ${categoryColors[p.category] || '#9E9E9E'}10; 
+                                                     color: ${categoryColors[p.category] || '#9E9E9E'};"
+                                              onclick="document.getElementById('category-filter').value='${p.category}'; onCategoryChange(); setTimeout(() => { document.getElementById('subcategory-filter').value='${p.subcategory}'; filterProducts(); }, 50);">
+                                            ${p.subcategory}
+                                        </span>
+                                    ` : '<span style="color: var(--gray-400);">-</span>'}
+                                </td>
+                                <td>${p.total_quantity}×</td>
+                                <td>${formatCurrency(p.avg_unit_price)}</td>
+                                <td><strong>${formatCurrency(p.total_spent)}</strong></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        function updateStats() {
+            const total = filteredProducts.reduce((sum, p) => sum + p.total_spent, 0);
+            const avg = filteredProducts.length > 0 
+                ? filteredProducts.reduce((sum, p) => sum + (p.avg_unit_price || 0), 0) / filteredProducts.length 
+                : 0;
+            
+            document.getElementById('stat-products').textContent = filteredProducts.length;
+            document.getElementById('stat-total').textContent = formatCurrency(total);
+            document.getElementById('stat-avg').textContent = formatCurrency(avg);
+        }
+        
+        function toggleSelect(productName, checkbox) {
+            if (checkbox.checked) {
+                selectedProducts.add(productName);
+            } else {
+                selectedProducts.delete(productName);
+            }
+            updateSelectionUI();
+        }
+        
+        function toggleSelectAll(checkbox) {
+            if (checkbox.checked) {
+                filteredProducts.forEach(p => selectedProducts.add(p.name));
+            } else {
+                filteredProducts.forEach(p => selectedProducts.delete(p.name));
+            }
+            renderProducts();
+            updateSelectionUI();
+        }
+        
+        function updateSelectionUI() {
+            const toolbar = document.getElementById('selection-toolbar');
+            const count = selectedProducts.size;
+            
+            document.getElementById('selected-count').textContent = count;
+            toolbar.classList.toggle('active', count > 0);
+            
+            // Update row styling
+            document.querySelectorAll('.product-table tbody tr').forEach(row => {
+                const name = row.getAttribute('data-name');
+                row.classList.toggle('selected', selectedProducts.has(name));
+            });
+        }
+        
+        function clearSelection() {
+            selectedProducts.clear();
+            renderProducts();
+            updateSelectionUI();
+            document.getElementById('select-all').checked = false;
+        }
+        
+        function onBulkCategoryChange() {
+            const category = document.getElementById('bulk-category-select').value;
+            const subcatSelect = document.getElementById('bulk-subcategory-select');
+            
+            // Reset subcategory dropdown
+            subcatSelect.innerHTML = '<option value="">Kies subcategorie...</option>';
+            
+            if (category && subcategories[category]) {
+                subcategories[category].forEach(s => {
+                    subcatSelect.innerHTML += `<option value="${s.name}">${s.icon} ${s.name}</option>`;
+                });
+                subcatSelect.disabled = false;
+            } else {
+                subcatSelect.disabled = true;
+            }
+        }
+        
+        async function bulkUpdateCategory() {
+            const category = document.getElementById('bulk-category-select').value;
+            if (!category) {
+                alert('Selecteer eerst een categorie');
+                return;
+            }
+            
+            if (selectedProducts.size === 0) {
+                alert('Selecteer eerst producten');
+                return;
+            }
+            
+            const productNames = Array.from(selectedProducts);
+            
+            try {
+                for (const name of productNames) {
+                    await fetch('/api/products/bulk-update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product_name: name, category: category })
+                    });
+                }
+                
+                alert(`${productNames.length} producten bijgewerkt naar "${category}"`);
+                
+                // Reload data
+                await loadData();
+                clearSelection();
+            } catch (error) {
+                alert('Fout bij bijwerken: ' + error.message);
+            }
+        }
+        
+        async function bulkUpdateSubcategory() {
+            const subcategory = document.getElementById('bulk-subcategory-select').value;
+            if (!subcategory) {
+                alert('Selecteer eerst een subcategorie');
+                return;
+            }
+            
+            if (selectedProducts.size === 0) {
+                alert('Selecteer eerst producten');
+                return;
+            }
+            
+            const productNames = Array.from(selectedProducts);
+            
+            try {
+                for (const name of productNames) {
+                    await fetch('/api/products/bulk-update-subcategory', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product_name: name, subcategory: subcategory })
+                    });
+                }
+                
+                alert(`${productNames.length} producten krijgen subcategorie "${subcategory}"`);
+                
+                // Reload data
+                await loadData();
+                clearSelection();
+            } catch (error) {
+                alert('Fout bij bijwerken: ' + error.message);
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function escapeJs(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+        
+        async function showProductModal(productName) {
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop';
+            backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+            
+            backdrop.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header">
+                        <button class="modal-close" onclick="this.closest('.modal-backdrop').remove()">×</button>
+                        <h2>Product laden...</h2>
+                    </div>
+                    <div class="modal-body" style="text-align: center; padding: 2rem;">
+                        <p>Even geduld...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(backdrop);
+            
+            try {
+                const response = await fetch(`/api/products/details/${encodeURIComponent(productName)}`);
+                const product = await response.json();
+                
+                if (product.error) throw new Error(product.error);
+                
+                const trendIcon = product.price_trend?.direction === 'up' ? '📈' : 
+                                  product.price_trend?.direction === 'down' ? '📉' : '➡️';
+                const trendColor = product.price_trend?.direction === 'up' ? '#E13A3A' : 
+                                   product.price_trend?.direction === 'down' ? '#5CB82F' : '#6C757D';
+                
+                backdrop.querySelector('.modal').innerHTML = `
+                    <div class="modal-header">
+                        <button class="modal-close" onclick="this.closest('.modal-backdrop').remove()">×</button>
+                        <h2>${product.original_name}</h2>
+                        <p style="opacity: 0.9; margin-top: 0.5rem;">
+                            ${product.category}
+                        </p>
+                    </div>
+                    <div class="modal-body">
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="background: #F8F9FA; padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 0.75rem; color: #6C757D; text-transform: uppercase;">Totaal Uitgegeven</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #212529;">${formatCurrency(product.total_spent)}</div>
+                            </div>
+                            <div style="background: #F8F9FA; padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 0.75rem; color: #6C757D; text-transform: uppercase;">Keer Gekocht</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #212529;">${product.total_quantity}×</div>
+                            </div>
+                            <div style="background: #F8F9FA; padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 0.75rem; color: #6C757D; text-transform: uppercase;">Gem. Prijs</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #212529;">${formatCurrency(product.avg_unit_price)}</div>
+                            </div>
+                            <div style="background: #F8F9FA; padding: 1rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 0.75rem; color: #6C757D; text-transform: uppercase;">Trend</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: ${trendColor};">
+                                    ${trendIcon} ${product.price_trend?.percentage || 0}%
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-bottom: 0.5rem;">30-Jaar Projectie</h3>
+                        <p style="color: #6C757D; margin-bottom: 1rem;">
+                            Als je dit product blijft kopen zoals nu:
+                        </p>
+                        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="flex: 1; background: #00ADE610; border-left: 4px solid #00ADE6; padding: 1rem;">
+                                <strong>Per maand:</strong> ${formatCurrency(product.projection?.monthly)}
+                            </div>
+                            <div style="flex: 1; background: #FF6B0010; border-left: 4px solid #FF6B00; padding: 1rem;">
+                                <strong>Per jaar:</strong> ${formatCurrency(product.projection?.yearly)}
+                            </div>
+                            <div style="flex: 1; background: #5CB82F10; border-left: 4px solid #5CB82F; padding: 1rem;">
+                                <strong>30 jaar:</strong> ${formatCurrency(product.projection?.thirty_years)}
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-bottom: 0.5rem;">Aankoophistorie</h3>
+                        <table class="product-table" style="font-size: 0.875rem;">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Factuur</th>
+                                    <th>Aantal</th>
+                                    <th>Prijs</th>
+                                    <th>Stukprijs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${(product.price_history || []).slice(-10).reverse().map(h => `
+                                    <tr>
+                                        <td>${new Date(h.invoice_date).toLocaleDateString('nl-NL')}</td>
+                                        <td><a href="/invoice/${h.invoice_id}" style="color: #00ADE6;">${h.invoice_number}</a></td>
+                                        <td>${h.quantity}×</td>
+                                        <td>${formatCurrency(h.price)}</td>
+                                        <td>${formatCurrency(h.unit_price)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                backdrop.querySelector('.modal-body').innerHTML = `
+                    <p style="color: #E13A3A;">Fout: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // Listen for Enter key in search
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchProducts();
+        });
+        
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>
+

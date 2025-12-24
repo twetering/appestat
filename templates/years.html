@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaaroverzichten - Appestat</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ah-blue: #00ADE6;
+            --ah-blue-dark: #0095C8;
+            --ah-orange: #FF6B00;
+            --ah-green: #5CB82F;
+            --ah-red: #E13A3A;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-600: #6C757D;
+            --gray-800: #343A40;
+            --gray-900: #212529;
+            --white: #FFFFFF;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Albert Sans', -apple-system, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.5;
+        }
+        
+        .ah-header {
+            background: var(--ah-blue);
+            color: var(--white);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+        
+        .header-content { display: flex; align-items: center; gap: 2rem; }
+        
+        .ah-logo {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-weight: 700; font-size: 1.5rem;
+            text-decoration: none; color: var(--white);
+        }
+        
+        .ah-logo-icon {
+            width: 40px; height: 40px; background: var(--white);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; color: var(--ah-blue);
+            font-weight: 700; font-size: 1.25rem;
+        }
+        
+        .ah-nav { display: flex; gap: 0.5rem; }
+        
+        .ah-nav a {
+            color: var(--white); text-decoration: none;
+            padding: 0.5rem 1rem; border-radius: var(--radius);
+            font-weight: 500; transition: background 0.2s;
+        }
+        
+        .ah-nav a:hover, .ah-nav a.active { background: rgba(255,255,255,0.15); }
+        
+        main { padding: 1.5rem 0 3rem; }
+        
+        .page-header { margin-bottom: 1.5rem; }
+        .page-title { font-size: 1.75rem; font-weight: 700; }
+        .page-subtitle { color: var(--gray-600); margin-top: 0.25rem; }
+        
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-title { font-size: 1rem; font-weight: 600; }
+        .card-body { padding: 1.25rem; }
+        
+        /* Year selector */
+        .year-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .year-tab {
+            padding: 0.75rem 1.5rem;
+            background: var(--white);
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .year-tab:hover {
+            border-color: var(--ah-blue);
+        }
+        
+        .year-tab.active {
+            background: var(--ah-blue);
+            border-color: var(--ah-blue);
+            color: var(--white);
+        }
+        
+        .year-tab .year-total {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+        
+        /* Summary grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .summary-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .summary-card-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--gray-600);
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+        
+        .summary-card-value.positive { color: var(--ah-green); }
+        .summary-card-value.negative { color: var(--ah-red); }
+        
+        .summary-card-change {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        /* Charts */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-wrapper {
+            height: 300px;
+        }
+        
+        /* Monthly breakdown */
+        .monthly-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        
+        .month-card {
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .month-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .month-amount {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--ah-blue);
+        }
+        
+        .month-orders {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+        }
+        
+        /* Category table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .data-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--gray-600);
+        }
+        
+        /* Year comparison */
+        .comparison-chart {
+            height: 400px;
+        }
+        
+        /* Budget section */
+        .budget-section {
+            background: linear-gradient(135deg, var(--ah-orange), var(--ah-red));
+            color: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .budget-section h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .budget-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .budget-input {
+            padding: 0.75rem 1rem;
+            font-size: 1.25rem;
+            border: none;
+            border-radius: var(--radius);
+            width: 200px;
+        }
+        
+        .budget-progress {
+            flex: 1;
+            background: rgba(255,255,255,0.3);
+            height: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .budget-progress-bar {
+            height: 100%;
+            background: var(--white);
+            transition: width 0.3s;
+        }
+        
+        .budget-status {
+            min-width: 150px;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+            .monthly-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header class="ah-header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="ah-logo">
+                    <span class="ah-logo-icon">ah</span>
+                    <span>Appestat</span>
+                </a>
+                <nav class="ah-nav">
+                    <a href="/">Dashboard</a>
+                    <a href="/search">Producten</a>
+                    <a href="/invoices">Facturen</a>
+                    <a href="/categories">Categorieën</a>
+                    <a href="/years" class="active">Jaren</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">📅 Jaaroverzichten</h1>
+                <p class="page-subtitle">Bekijk en vergelijk uitgaven per jaar voor betere budgettering</p>
+            </div>
+            
+            <div class="year-tabs" id="year-tabs">
+                <!-- Year tabs will be rendered here -->
+            </div>
+            
+            <div id="year-content">
+                <div style="text-align: center; padding: 3rem; color: var(--gray-600);">
+                    Jaaroverzichten laden...
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        let analysisData = null;
+        let selectedYear = null;
+        
+        const categoryColors = {
+            'Zuivel & Eieren': '#00ADE6',
+            'Groente & Fruit': '#5CB82F',
+            'Vlees & Vis': '#E13A3A',
+            'Brood & Bakkerij': '#D4A574',
+            'Pasta, Rijst & Granen': '#FFB347',
+            'Dranken': '#4FC3F7',
+            'Sauzen & Specerijen': '#FF7043',
+            'Snacks & Zoetwaren': '#AB47BC',
+            'Huishouden': '#78909C',
+            'Persoonlijke Verzorging': '#F48FB1',
+            'Verpakking & Statiegeld': '#90A4AE',
+            'Bezorgkosten': '#607D8B',
+            'Abonnementen': '#9C27B0',
+            'Overig': '#9E9E9E'
+        };
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(amount || 0);
+        }
+        
+        async function loadData() {
+            try {
+                const response = await fetch('/api/analysis');
+                analysisData = await response.json();
+                
+                renderYearTabs();
+                
+                // Select most recent year by default
+                const years = Object.keys(analysisData.yearly_totals).sort().reverse();
+                if (years.length > 0) {
+                    selectYear(years[0]);
+                }
+            } catch (error) {
+                console.error('Failed to load data:', error);
+            }
+        }
+        
+        function renderYearTabs() {
+            const container = document.getElementById('year-tabs');
+            const years = Object.keys(analysisData.yearly_totals).sort().reverse();
+            
+            container.innerHTML = years.map(year => `
+                <button class="year-tab" data-year="${year}" onclick="selectYear('${year}')">
+                    ${year}
+                    <span class="year-total">${formatCurrency(analysisData.yearly_totals[year])}</span>
+                </button>
+            `).join('');
+            
+            // Add comparison tab if multiple years
+            if (years.length > 1) {
+                container.innerHTML += `
+                    <button class="year-tab" data-year="compare" onclick="showComparison()">
+                        📊 Vergelijken
+                    </button>
+                `;
+            }
+        }
+        
+        function selectYear(year) {
+            selectedYear = year;
+            
+            // Update active tab
+            document.querySelectorAll('.year-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.year === year);
+            });
+            
+            renderYearContent();
+        }
+        
+        function renderYearContent() {
+            const container = document.getElementById('year-content');
+            const yearData = analysisData.yearly_category[selectedYear] || {};
+            const yearTotal = analysisData.yearly_totals[selectedYear] || 0;
+            
+            // Filter monthly data for this year
+            const monthlyData = {};
+            Object.entries(analysisData.monthly_totals).forEach(([month, total]) => {
+                if (month.startsWith(selectedYear)) {
+                    monthlyData[month] = total;
+                }
+            });
+            
+            // Calculate stats
+            const months = Object.keys(monthlyData);
+            const avgMonthly = months.length > 0 ? yearTotal / months.length : 0;
+            const maxMonth = months.length > 0 
+                ? Math.max(...Object.values(monthlyData)) 
+                : 0;
+            const minMonth = months.length > 0 
+                ? Math.min(...Object.values(monthlyData)) 
+                : 0;
+            
+            // Count invoices for this year
+            const yearInvoiceCount = Object.keys(monthlyData).length * 4; // Approximate
+            
+            container.innerHTML = `
+                <!-- Summary -->
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-card-label">Totaal ${selectedYear}</div>
+                        <div class="summary-card-value">${formatCurrency(yearTotal)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">Gemiddeld per Maand</div>
+                        <div class="summary-card-value">${formatCurrency(avgMonthly)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">Duurste Maand</div>
+                        <div class="summary-card-value negative">${formatCurrency(maxMonth)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">Goedkoopste Maand</div>
+                        <div class="summary-card-value positive">${formatCurrency(minMonth)}</div>
+                    </div>
+                </div>
+                
+                <!-- Budget planner -->
+                <div class="budget-section">
+                    <h3>💰 Jaarbudget Planner</h3>
+                    <div class="budget-input-group">
+                        <input type="number" class="budget-input" id="budget-input" 
+                               placeholder="Budget" value="${Math.round(yearTotal * 1.1)}"
+                               onchange="updateBudget()">
+                        <div class="budget-progress">
+                            <div class="budget-progress-bar" id="budget-bar" 
+                                 style="width: ${Math.min(100, (yearTotal / (yearTotal * 1.1)) * 100)}%;"></div>
+                        </div>
+                        <div class="budget-status" id="budget-status">
+                            ${formatCurrency(yearTotal * 1.1 - yearTotal)} over
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="charts-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Maandelijkse Uitgaven</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-wrapper">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Verdeling per Categorie</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-wrapper">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Monthly breakdown -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Overzicht per Maand</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="monthly-grid">
+                            ${renderMonthCards(monthlyData)}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category breakdown -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Uitgaven per Categorie</h3>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Categorie</th>
+                                <th>Totaal</th>
+                                <th>% van Totaal</th>
+                                <th>Per Maand (gem.)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(yearData)
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([cat, total]) => `
+                                    <tr>
+                                        <td>
+                                            <a href="/categories?filter=${encodeURIComponent(cat)}" 
+                                               style="color: ${categoryColors[cat] || '#9E9E9E'}; text-decoration: none;">
+                                                ${cat}
+                                            </a>
+                                        </td>
+                                        <td><strong>${formatCurrency(total)}</strong></td>
+                                        <td>${((total / yearTotal) * 100).toFixed(1)}%</td>
+                                        <td>${formatCurrency(total / Math.max(months.length, 1))}</td>
+                                    </tr>
+                                `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Render charts
+            renderMonthlyChart(monthlyData);
+            renderCategoryChart(yearData);
+        }
+        
+        function renderMonthCards(monthlyData) {
+            const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+            
+            return monthNames.map((name, index) => {
+                const monthKey = `${selectedYear}-${String(index + 1).padStart(2, '0')}`;
+                const amount = monthlyData[monthKey] || 0;
+                const hasData = monthlyData[monthKey] !== undefined;
+                
+                return `
+                    <div class="month-card" style="opacity: ${hasData ? 1 : 0.4};">
+                        <div class="month-name">${name}</div>
+                        <div class="month-amount">${hasData ? formatCurrency(amount) : '-'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderMonthlyChart(monthlyData) {
+            const ctx = document.getElementById('monthlyChart');
+            if (!ctx) return;
+            
+            const labels = Object.keys(monthlyData).map(m => {
+                const [, month] = m.split('-');
+                const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+                return monthNames[parseInt(month) - 1];
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: Object.values(monthlyData),
+                        backgroundColor: '#00ADE6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => formatCurrency(ctx.raw)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => '€' + v }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderCategoryChart(yearData) {
+            const ctx = document.getElementById('categoryChart');
+            if (!ctx) return;
+            
+            const labels = Object.keys(yearData);
+            const colors = labels.map(l => categoryColors[l] || '#9E9E9E');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: Object.values(yearData),
+                        backgroundColor: colors,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { usePointStyle: true, pointStyle: 'circle' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.label}: ${formatCurrency(ctx.raw)}`
+                            }
+                        }
+                    },
+                    cutout: '55%'
+                }
+            });
+        }
+        
+        function updateBudget() {
+            const budget = parseFloat(document.getElementById('budget-input').value) || 0;
+            const spent = analysisData.yearly_totals[selectedYear] || 0;
+            const percentage = budget > 0 ? (spent / budget) * 100 : 0;
+            const remaining = budget - spent;
+            
+            document.getElementById('budget-bar').style.width = Math.min(100, percentage) + '%';
+            document.getElementById('budget-bar').style.background = 
+                percentage > 100 ? '#E13A3A' : 
+                percentage > 80 ? '#FF6B00' : '#FFFFFF';
+            
+            document.getElementById('budget-status').textContent = 
+                remaining >= 0 ? `${formatCurrency(remaining)} over` : `${formatCurrency(-remaining)} over budget!`;
+        }
+        
+        function showComparison() {
+            document.querySelectorAll('.year-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.year === 'compare');
+            });
+            
+            const container = document.getElementById('year-content');
+            const years = Object.keys(analysisData.yearly_totals).sort();
+            
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Jaarlijkse Vergelijking</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="comparison-chart">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Gedetailleerde Vergelijking</h3>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Jaar</th>
+                                <th>Totaal</th>
+                                <th>Gem. per Maand</th>
+                                <th>Verandering</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${years.map((year, i) => {
+                                const total = analysisData.yearly_totals[year];
+                                const prevTotal = i > 0 ? analysisData.yearly_totals[years[i-1]] : null;
+                                const change = prevTotal ? ((total - prevTotal) / prevTotal * 100).toFixed(1) : null;
+                                
+                                return `
+                                    <tr>
+                                        <td><strong>${year}</strong></td>
+                                        <td>${formatCurrency(total)}</td>
+                                        <td>${formatCurrency(total / 12)}</td>
+                                        <td>
+                                            ${change !== null ? `
+                                                <span style="color: ${change > 0 ? '#E13A3A' : '#5CB82F'};">
+                                                    ${change > 0 ? '↑' : '↓'} ${Math.abs(change)}%
+                                                </span>
+                                            ` : '-'}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Render comparison chart
+            const ctx = document.getElementById('comparisonChart');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Totale Uitgaven',
+                        data: years.map(y => analysisData.yearly_totals[y]),
+                        backgroundColor: '#00ADE6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => formatCurrency(ctx.raw)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => '€' + v }
+                        }
+                    }
+                }
+            });
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>
+

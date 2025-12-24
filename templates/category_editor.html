@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorie Editor - Appestat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ah-blue: #00ADE6;
+            --ah-blue-dark: #0095C8;
+            --ah-orange: #FF6B00;
+            --ah-green: #5CB82F;
+            --ah-red: #E13A3A;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-600: #6C757D;
+            --gray-800: #343A40;
+            --gray-900: #212529;
+            --white: #FFFFFF;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Albert Sans', -apple-system, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.5;
+        }
+        
+        .ah-header {
+            background: var(--ah-blue);
+            color: var(--white);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+        
+        .header-content { display: flex; align-items: center; gap: 2rem; }
+        
+        .ah-logo {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-weight: 700; font-size: 1.5rem;
+            text-decoration: none; color: var(--white);
+        }
+        
+        .ah-logo-icon {
+            width: 40px; height: 40px; background: var(--white);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; color: var(--ah-blue);
+            font-weight: 700; font-size: 1.25rem;
+        }
+        
+        .ah-nav { display: flex; gap: 0.5rem; }
+        
+        .ah-nav a {
+            color: var(--white); text-decoration: none;
+            padding: 0.5rem 1rem; border-radius: var(--radius);
+            font-weight: 500; transition: background 0.2s;
+        }
+        
+        .ah-nav a:hover, .ah-nav a.active { background: rgba(255,255,255,0.15); }
+        
+        main { padding: 1.5rem 0 3rem; }
+        
+        .page-header { 
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .page-title { font-size: 1.75rem; font-weight: 700; }
+        .page-subtitle { color: var(--gray-600); margin-top: 0.25rem; }
+        
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .card-title { font-size: 1rem; font-weight: 600; }
+        .card-body { padding: 1.25rem; }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.625rem 1.25rem; border-radius: var(--radius);
+            font-weight: 600; font-size: 0.875rem; cursor: pointer;
+            text-decoration: none; border: none; transition: all 0.2s;
+        }
+        
+        .btn-primary { background: var(--ah-blue); color: var(--white); }
+        .btn-primary:hover { background: var(--ah-blue-dark); }
+        .btn-secondary { background: var(--gray-100); color: var(--gray-800); }
+        .btn-secondary:hover { background: var(--gray-200); }
+        .btn-success { background: var(--ah-green); color: var(--white); }
+        .btn-danger { background: var(--ah-red); color: var(--white); }
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+        
+        /* Category grid */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+        }
+        
+        .category-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .category-header {
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .category-icon {
+            font-size: 1.5rem;
+        }
+        
+        .category-info {
+            flex: 1;
+        }
+        
+        .category-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .category-count {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+        }
+        
+        .category-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 2px solid var(--gray-200);
+        }
+        
+        .category-body {
+            padding: 1rem;
+        }
+        
+        .keywords-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        
+        .keywords-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .keyword-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: var(--gray-100);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .keyword-remove {
+            background: none;
+            border: none;
+            color: var(--gray-600);
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            font-size: 0.875rem;
+        }
+        
+        .keyword-remove:hover {
+            color: var(--ah-red);
+        }
+        
+        .add-keyword-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .add-keyword-input {
+            flex: 1;
+            padding: 0.375rem 0.5rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+        
+        /* Info box */
+        .info-box {
+            background: var(--ah-blue);
+            color: var(--white);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box p {
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box ul {
+            margin-left: 1.5rem;
+            opacity: 0.9;
+        }
+        
+        /* Actions panel */
+        .actions-panel {
+            background: var(--gray-100);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--gray-800);
+            color: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast.success { background: var(--ah-green); }
+        .toast.error { background: var(--ah-red); }
+        
+        @keyframes slideIn {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Subcategory section */
+        .subcategory-section {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed var(--gray-200);
+        }
+        
+        .subcategory-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        
+        .subcategory-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: linear-gradient(135deg, var(--gray-100), var(--gray-50));
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            border: 1px solid var(--gray-200);
+        }
+    </style>
+</head>
+<body>
+    <header class="ah-header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="ah-logo">
+                    <span class="ah-logo-icon">ah</span>
+                    <span>Appestat</span>
+                </a>
+                <nav class="ah-nav">
+                    <a href="/">Dashboard</a>
+                    <a href="/search">Producten</a>
+                    <a href="/invoices">Facturen</a>
+                    <a href="/categories" class="active">Categorieën</a>
+                    <a href="/years">Jaren</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">🏷️ Categorie & Keyword Editor</h1>
+                    <p class="page-subtitle">Beheer categorieën, subcategorieën en automatische categorisatie-keywords</p>
+                </div>
+                <a href="/categories" class="btn btn-secondary">← Terug naar overzicht</a>
+            </div>
+            
+            <div class="info-box">
+                <h3>💡 Hoe werkt categorisatie?</h3>
+                <p>Producten worden automatisch gecategoriseerd op basis van keywords:</p>
+                <ul>
+                    <li><strong>Keywords</strong> worden gezocht in productnamen (niet hoofdlettergevoelig)</li>
+                    <li>Meer specifieke keywords (bijv. "Red Bull") matchen eerder dan algemene (bijv. "drink")</li>
+                    <li>Je kunt keywords toevoegen, verwijderen of aanpassen</li>
+                    <li>Wijzigingen gelden voor nieuwe imports én kunnen retroactief worden toegepast</li>
+                </ul>
+            </div>
+            
+            <div class="actions-panel">
+                <button class="btn btn-primary" onclick="applyKeywordChanges()">
+                    🔄 Pas Wijzigingen Toe op Alle Producten
+                </button>
+                <button class="btn btn-secondary" onclick="addNewCategory()">
+                    ➕ Nieuwe Categorie
+                </button>
+                <button class="btn btn-secondary" onclick="exportKeywords()">
+                    📥 Exporteer Keywords
+                </button>
+            </div>
+            
+            <div class="category-grid" id="categories-container">
+                <p style="padding: 2rem; text-align: center; color: var(--gray-600);">
+                    Categorieën laden...
+                </p>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        let categories = [];
+        let keywords = {};
+        
+        async function loadData() {
+            try {
+                const [categoriesRes, keywordsRes] = await Promise.all([
+                    fetch('/api/categories'),
+                    fetch('/api/categories/keywords')
+                ]);
+                
+                categories = await categoriesRes.json();
+                keywords = await keywordsRes.json();
+                
+                renderCategories();
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                showToast('Fout bij laden van data', 'error');
+            }
+        }
+        
+        function renderCategories() {
+            const container = document.getElementById('categories-container');
+            
+            container.innerHTML = categories.map(cat => {
+                const catKeywords = keywords[cat.name] || [];
+                const subcats = getSubcategories(cat.name);
+                
+                return `
+                    <div class="category-card" data-category="${cat.name}">
+                        <div class="category-header">
+                            <span class="category-icon">${cat.icon}</span>
+                            <div class="category-info">
+                                <div class="category-name">${cat.name}</div>
+                                <div class="category-count">${cat.product_count} producten</div>
+                            </div>
+                            <div class="category-color" style="background: ${cat.color};" 
+                                 title="Kleur: ${cat.color}"></div>
+                        </div>
+                        <div class="category-body">
+                            <div class="keywords-label">Keywords (${catKeywords.length})</div>
+                            <div class="keywords-list" id="keywords-${cat.id}">
+                                ${catKeywords.map(kw => `
+                                    <span class="keyword-tag">
+                                        ${kw}
+                                        <button class="keyword-remove" onclick="removeKeyword('${cat.name}', '${escapeJs(kw)}')" 
+                                                title="Verwijder keyword">×</button>
+                                    </span>
+                                `).join('')}
+                                ${catKeywords.length === 0 ? '<span style="color: var(--gray-600); font-size: 0.75rem;">Geen keywords</span>' : ''}
+                            </div>
+                            <div class="add-keyword-form">
+                                <input type="text" class="add-keyword-input" 
+                                       placeholder="Nieuw keyword toevoegen..."
+                                       id="new-keyword-${cat.id}"
+                                       onkeypress="if(event.key==='Enter') addKeyword('${cat.name}', ${cat.id})">
+                                <button class="btn btn-sm btn-primary" onclick="addKeyword('${cat.name}', ${cat.id})">+</button>
+                            </div>
+                            
+                            ${subcats.length > 0 ? `
+                                <div class="subcategory-section">
+                                    <div class="keywords-label">Subcategorieën</div>
+                                    <div class="subcategory-list">
+                                        ${subcats.map(sub => `
+                                            <span class="subcategory-tag">${sub}</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getSubcategories(categoryName) {
+            // Define subcategories per main category
+            const subcategoryMap = {
+                'Dranken': ['Koffie & Thee', 'Frisdrank', 'Sappen', 'Alcoholisch', 'Water', 'Sportdranken'],
+                'Groente & Fruit': ['Groente', 'Fruit', 'Kruiden', 'Peulvruchten', 'Salades'],
+                'Zuivel & Eieren': ['Melk', 'Kaas', 'Yoghurt', 'Boter', 'Eieren', 'Roomproducten'],
+                'Vlees & Vis': ['Vlees', 'Vis', 'Vleeswaren', 'Vegetarisch'],
+                'Brood & Bakkerij': ['Brood', 'Gebak', 'Ontbijtproducten'],
+                'Snacks & Zoetwaren': ['Chips & Noten', 'Snoep', 'Chocolade', 'Koekjes']
+            };
+            return subcategoryMap[categoryName] || [];
+        }
+        
+        async function addKeyword(categoryName, categoryId) {
+            const input = document.getElementById(`new-keyword-${categoryId}`);
+            const keyword = input.value.trim().toLowerCase();
+            
+            if (!keyword) return;
+            
+            try {
+                const response = await fetch('/api/categories/keywords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: categoryName, keyword: keyword })
+                });
+                
+                if (response.ok) {
+                    input.value = '';
+                    showToast(`Keyword "${keyword}" toegevoegd aan ${categoryName}`);
+                    loadData(); // Reload
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Fout bij toevoegen', 'error');
+                }
+            } catch (error) {
+                showToast('Fout: ' + error.message, 'error');
+            }
+        }
+        
+        async function removeKeyword(categoryName, keyword) {
+            if (!confirm(`Weet je zeker dat je "${keyword}" wilt verwijderen uit ${categoryName}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/categories/keywords', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: categoryName, keyword: keyword })
+                });
+                
+                if (response.ok) {
+                    showToast(`Keyword "${keyword}" verwijderd`);
+                    loadData();
+                } else {
+                    showToast('Fout bij verwijderen', 'error');
+                }
+            } catch (error) {
+                showToast('Fout: ' + error.message, 'error');
+            }
+        }
+        
+        async function applyKeywordChanges() {
+            if (!confirm('Dit past de keyword-regels toe op ALLE producten. Producten worden opnieuw gecategoriseerd. Doorgaan?')) {
+                return;
+            }
+            
+            showToast('Wijzigingen worden toegepast...', 'info');
+            
+            try {
+                const response = await fetch('/api/migrate', { method: 'POST' });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast(`${result.recategorized} producten opnieuw gecategoriseerd`);
+                    loadData();
+                } else {
+                    showToast(result.error || 'Fout bij migratie', 'error');
+                }
+            } catch (error) {
+                showToast('Fout: ' + error.message, 'error');
+            }
+        }
+        
+        async function addNewCategory() {
+            const name = prompt('Naam voor nieuwe categorie:');
+            if (!name) return;
+            
+            const icon = prompt('Emoji/icoon voor categorie:', '📁');
+            const color = prompt('Kleurcode (hex):', '#9E9E9E');
+            
+            try {
+                const response = await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, icon, color })
+                });
+                
+                if (response.ok) {
+                    showToast(`Categorie "${name}" aangemaakt`);
+                    loadData();
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Fout bij aanmaken', 'error');
+                }
+            } catch (error) {
+                showToast('Fout: ' + error.message, 'error');
+            }
+        }
+        
+        function exportKeywords() {
+            const dataStr = JSON.stringify(keywords, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ah-categories-keywords.json';
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            showToast('Keywords geëxporteerd');
+        }
+        
+        function escapeJs(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+        
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>
+

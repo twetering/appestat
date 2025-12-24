@@ -1,0 +1,9 @@
+__pycache__
+venv
+.git
+.DS_Store
+data/invoices/*
+!data/invoices/.gitkeep
+data/bonnen/*
+!data/bonnen/.gitkeep
+*.db

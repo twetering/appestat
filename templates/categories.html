@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorieën - Appestat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ah-blue: #00ADE6;
+            --ah-blue-dark: #0095C8;
+            --ah-orange: #FF6B00;
+            --ah-green: #5CB82F;
+            --ah-red: #E13A3A;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F5;
+            --gray-200: #E9ECEF;
+            --gray-300: #DEE2E6;
+            --gray-400: #CED4DA;
+            --gray-500: #ADB5BD;
+            --gray-600: #6C757D;
+            --gray-700: #495057;
+            --gray-800: #343A40;
+            --gray-900: #212529;
+            --white: #FFFFFF;
+            --body-bg: var(--gray-50);
+            --card-bg: var(--white);
+            --border-color: var(--gray-200);
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Albert Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--body-bg);
+            color: var(--gray-900);
+            line-height: 1.5;
+        }
+        
+        .ah-header {
+            background: var(--ah-blue);
+            color: var(--white);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .ah-header-top {
+            background: rgba(0,0,0,0.1);
+            font-size: 0.75rem;
+            padding: 0.25rem 0;
+        }
+        
+        .ah-header-top .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .ah-header-main {
+            padding: 0.75rem 0;
+        }
+        
+        .ah-header-main .container {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .ah-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-decoration: none;
+            color: var(--white);
+        }
+        
+        .ah-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ah-blue);
+            font-weight: 700;
+        }
+        
+        .ah-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .ah-nav a {
+            color: var(--white);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .ah-nav a:hover,
+        .ah-nav a.active {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        main { padding: 1.5rem 0 3rem; }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .page-title { font-size: 1.75rem; font-weight: 700; }
+        
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 900px) {
+            .layout-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--gray-50);
+        }
+        
+        .card-title { font-weight: 600; }
+        .card-body { padding: 0; }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary { background: var(--ah-blue); color: var(--white); }
+        .btn-primary:hover { background: var(--ah-blue-dark); }
+        .btn-secondary { background: var(--gray-100); color: var(--gray-800); }
+        .btn-secondary:hover { background: var(--gray-200); }
+        .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.75rem; }
+        
+        .category-list {
+            list-style: none;
+        }
+        
+        .category-item {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s;
+            gap: 0.75rem;
+        }
+        
+        .category-item:hover {
+            background: var(--gray-50);
+        }
+        
+        .category-item.active {
+            background: #E3F2FD;
+            border-left: 3px solid var(--ah-blue);
+        }
+        
+        .category-icon {
+            font-size: 1.25rem;
+        }
+        
+        .category-info {
+            flex: 1;
+        }
+        
+        .category-name {
+            font-weight: 500;
+        }
+        
+        .category-count {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+        }
+        
+        .category-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .btn-delete {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--gray-300);
+            background: var(--white);
+            color: var(--gray-600);
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            padding: 0;
+        }
+        
+        .btn-delete:hover {
+            background: var(--ah-red);
+            color: white;
+            border-color: var(--ah-red);
+        }
+        
+        .product-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .product-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            gap: 1rem;
+        }
+        
+        .product-item:hover {
+            background: var(--gray-50);
+        }
+        
+        .product-name {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+        
+        .product-total {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .product-count {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            min-width: 40px;
+        }
+        
+        .category-selects {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .category-select,
+        .subcategory-select {
+            padding: 0.375rem 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 0.8rem;
+            background: var(--white);
+            cursor: pointer;
+            min-width: 130px;
+        }
+        
+        .subcategory-select {
+            min-width: 120px;
+            color: var(--gray-700);
+        }
+        
+        .category-select:focus,
+        .subcategory-select:focus {
+            outline: none;
+            border-color: var(--ah-blue);
+        }
+        
+        .product-link {
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        
+        .product-link:hover {
+            color: var(--ah-blue);
+        }
+        
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--gray-600);
+        }
+        
+        .new-category-form {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--gray-50);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .form-input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--ah-blue);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--gray-800);
+            color: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast.success { background: var(--ah-green); }
+        .toast.error { background: var(--ah-red); }
+        
+        @keyframes slideIn {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            gap: 1rem;
+            color: var(--gray-600);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--ah-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .ah-footer {
+            background: var(--gray-800);
+            color: var(--white);
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .footer-links a {
+            color: var(--gray-400);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+        
+        .overig-highlight {
+            background: #FFF8E1 !important;
+            border-left: 3px solid var(--ah-orange) !important;
+        }
+        
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .stat-box {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-box-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .stat-box-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+        }
+    </style>
+</head>
+<body>
+    <header class="ah-header">
+        <div class="ah-header-top">
+            <div class="container">
+                <span>Appestat - Personal Food Accountant</span>
+                <span>Open Source</span>
+            </div>
+        </div>
+        <div class="ah-header-main">
+            <div class="container">
+                <a href="/" class="ah-logo">
+                    <div class="ah-logo-icon">A</div>
+                    <span>Appestat</span>
+                </a>
+                <nav class="ah-nav">
+                    <a href="/">Dashboard</a>
+                    <a href="/search">Producten</a>
+                    <a href="/invoices">Facturen</a>
+                    <a href="/categories" class="active">Categorieën</a>
+                    <a href="/years">Jaren</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">🏷️ Categorieën Beheren</h1>
+                    <p style="color: var(--gray-600); margin-top: 0.25rem;">Bekijk en beheer productcategorieën</p>
+                </div>
+                <a href="/category-editor" class="btn btn-primary" style="
+                    display: inline-flex; align-items: center; gap: 0.5rem;
+                    padding: 0.625rem 1.25rem; border-radius: 8px;
+                    font-weight: 600; font-size: 0.875rem; text-decoration: none;
+                    background: var(--ah-blue); color: var(--white);
+                ">⚙️ Keyword Editor</a>
+            </div>
+            
+            <div id="app">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Categorieën worden geladen...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="ah-footer">
+        <div class="container">
+            <div class="footer-content">
+                <span>© Appestat</span>
+                <div class="footer-links">
+                    <a href="/">Dashboard</a>
+                    <a href="/invoices">Facturen</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        let categories = [];
+        let products = [];
+        let subcategories = {};  // Per category
+        let selectedCategory = null;
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(amount || 0);
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        async function loadData() {
+            try {
+                const [categoriesRes, productsRes, subcatsRes] = await Promise.all([
+                    fetch('/api/categories'),
+                    fetch('/api/products'),
+                    fetch('/api/subcategories')
+                ]);
+                
+                categories = await categoriesRes.json();
+                products = await productsRes.json();
+                const subcatList = await subcatsRes.json();
+                
+                // Organize subcategories by category
+                subcategories = {};
+                subcatList.forEach(s => {
+                    if (!subcategories[s.category_name]) {
+                        subcategories[s.category_name] = [];
+                    }
+                    subcategories[s.category_name].push(s);
+                });
+                
+                // Default to Overig if exists
+                selectedCategory = categories.find(c => c.name === 'Overig')?.name || categories[0]?.name;
+                
+                renderPage();
+            } catch (error) {
+                document.getElementById('app').innerHTML = `
+                    <div class="loading">
+                        <p style="color: var(--ah-red);">Fout bij laden: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderPage() {
+            const app = document.getElementById('app');
+            
+            // Group products by name and category
+            const productGroups = {};
+            products.forEach(p => {
+                const key = p.original_name;
+                if (!productGroups[key]) {
+                    productGroups[key] = {
+                        name: p.original_name,
+                        category: p.effective_category,
+                        subcategory: p.subcategory || null,
+                        count: 0,
+                        total: 0
+                    };
+                }
+                productGroups[key].count += p.quantity;
+                productGroups[key].total += p.price;
+                // Use the most recent subcategory
+                if (p.subcategory) productGroups[key].subcategory = p.subcategory;
+            });
+            
+            const groupedProducts = Object.values(productGroups);
+            
+            // Group by subcategory for selected category
+            const subcatStats = {};
+            const catSubcats = subcategories[selectedCategory] || [];
+            catSubcats.forEach(s => {
+                subcatStats[s.name] = { icon: s.icon, count: 0, total: 0 };
+            });
+            const categoryProductsForStats = groupedProducts.filter(p => p.category === selectedCategory);
+            categoryProductsForStats.forEach(p => {
+                if (p.subcategory && subcatStats[p.subcategory]) {
+                    subcatStats[p.subcategory].count += p.count;
+                    subcatStats[p.subcategory].total += p.total;
+                }
+            });
+            const categoryProducts = groupedProducts.filter(p => p.category === selectedCategory);
+            const overigCount = groupedProducts.filter(p => p.category === 'Overig').length;
+            
+            app.innerHTML = `
+                <div class="layout-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Categorieën</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="category-list">
+                                ${categories.map(cat => `
+                                    <li class="category-item ${cat.name === selectedCategory ? 'active' : ''} ${cat.name === 'Overig' && cat.product_count > 0 ? 'overig-highlight' : ''}"
+                                        onclick="selectCategory('${cat.name}')">
+                                        <span class="category-icon">${cat.icon}</span>
+                                        <div class="category-info">
+                                            <div class="category-name">${cat.name}</div>
+                                            <div class="category-count">${cat.product_count} producten</div>
+                                        </div>
+                                        <div class="category-color" style="background: ${cat.color}"></div>
+                                        ${!cat.is_system ? `
+                                            <button class="btn-delete" 
+                                                    onclick="deleteCategory(${cat.id}, '${escapeJs(cat.name)}', event)"
+                                                    title="Verwijder categorie">
+                                                ×
+                                            </button>
+                                        ` : ''}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                            <div class="new-category-form">
+                                <div class="form-row">
+                                    <input type="text" class="form-input" id="new-category-name" placeholder="Nieuwe categorie...">
+                                    <button class="btn btn-primary" onclick="addCategory()">+ Toevoegen</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Producten in: ${selectedCategory}</h3>
+                        </div>
+                        <div class="stats-row">
+                            <div class="stat-box">
+                                <div class="stat-box-value">${categoryProducts.length}</div>
+                                <div class="stat-box-label">Producten</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-box-value">${categoryProducts.reduce((sum, p) => sum + p.count, 0)}</div>
+                                <div class="stat-box-label">Totaal Gekocht</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-box-value">${formatCurrency(categoryProducts.reduce((sum, p) => sum + p.total, 0))}</div>
+                                <div class="stat-box-label">Totaal Bedrag</div>
+                            </div>
+                            ${selectedCategory === 'Overig' ? `
+                                <div class="stat-box" style="background: #FFF3CD; padding: 0.5rem; border-radius: 4px;">
+                                    <div class="stat-box-value" style="color: var(--ah-orange);">${overigCount}</div>
+                                    <div class="stat-box-label">Te categoriseren</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${(subcategories[selectedCategory] || []).length > 0 ? `
+                            <div style="padding: 1rem 1.25rem; background: var(--gray-50); border-bottom: 1px solid var(--border-color);">
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--gray-600); margin-bottom: 0.5rem;">Subcategorieën</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    ${Object.entries(subcatStats)
+                                        .filter(([name, data]) => data.total > 0)
+                                        .sort((a, b) => b[1].total - a[1].total)
+                                        .map(([name, data]) => `
+                                            <div style="background: white; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--gray-200); font-size: 0.85rem;">
+                                                <span style="margin-right: 0.25rem;">${data.icon}</span>
+                                                <strong>${name}</strong>
+                                                <span style="color: var(--gray-600); margin-left: 0.5rem;">${formatCurrency(data.total)}</span>
+                                            </div>
+                                        `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        <div class="card-body product-list">
+                            ${categoryProducts.length === 0 ? `
+                                <div class="empty-state">
+                                    <p>Geen producten in deze categorie</p>
+                                </div>
+                            ` : categoryProducts.sort((a, b) => b.total - a.total).map(product => `
+                                <div class="product-item">
+                                    <span class="product-name product-link" onclick="showProductModal('${escapeJs(product.name)}')">
+                                        ${product.name}
+                                    </span>
+                                    <span class="product-count">${product.count}×</span>
+                                    <span class="product-total">${formatCurrency(product.total)}</span>
+                                    <div class="category-selects">
+                                        <select class="category-select" onchange="moveProduct('${escapeJs(product.name)}', this.value, null)" data-product="${escapeJs(product.name)}">
+                                            ${categories.map(cat => `
+                                                <option value="${cat.name}" ${cat.name === product.category ? 'selected' : ''}>
+                                                    ${cat.icon} ${cat.name}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                        <select class="subcategory-select" onchange="moveProduct('${escapeJs(product.name)}', null, this.value)" data-product="${escapeJs(product.name)}">
+                                            <option value="">Subcategorie...</option>
+                                            ${(subcategories[product.category] || []).map(sub => `
+                                                <option value="${sub.name}" ${sub.name === product.subcategory ? 'selected' : ''}>
+                                                    ${sub.icon} ${sub.name}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function escapeJs(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+        
+        function selectCategory(categoryName) {
+            selectedCategory = categoryName;
+            renderPage();
+        }
+        
+        async function moveProduct(productName, newCategory, newSubcategory) {
+            // Find a product with this name to get its ID
+            const product = products.find(p => p.original_name === productName);
+            if (!product) return;
+            
+            try {
+                // Update category if provided
+                if (newCategory) {
+                    const response = await fetch(`/api/products/${product.id}/category`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            category: newCategory, 
+                            apply_to_similar: true 
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    const count = result.updated_count || 1;
+                    
+                    // Update local data
+                    products.forEach(p => {
+                        if (p.original_name === productName) {
+                            p.effective_category = newCategory;
+                            p.user_category = newCategory;
+                            p.subcategory = null;  // Reset subcategory when category changes
+                        }
+                    });
+                    
+                    showToast(`${count}× "${productName}" → ${newCategory}`);
+                }
+                
+                // Update subcategory if provided
+                if (newSubcategory) {
+                    const response = await fetch(`/api/products/${product.id}/subcategory`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            subcategory: newSubcategory, 
+                            apply_to_similar: true 
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    const count = result.updated_count || 1;
+                    
+                    // Update local data
+                    products.forEach(p => {
+                        if (p.original_name === productName) {
+                            p.subcategory = newSubcategory;
+                        }
+                    });
+                    
+                    showToast(`${count}× "${productName}" → ${newSubcategory}`);
+                }
+                
+                // Reload categories to get updated counts
+                const categoriesRes = await fetch('/api/categories');
+                categories = await categoriesRes.json();
+                
+                renderPage();
+            } catch (error) {
+                showToast('Fout bij verplaatsen', 'error');
+            }
+        }
+        
+        const categoryIcons = {
+            'Zuivel & Eieren': '🥛',
+            'Groente & Fruit': '🥕',
+            'Vlees & Vis': '🥩',
+            'Brood & Bakkerij': '🍞',
+            'Pasta, Rijst & Granen': '🍝',
+            'Dranken': '🥤',
+            'Sauzen & Specerijen': '🧂',
+            'Snacks & Zoetwaren': '🍫',
+            'Huishouden': '🧹',
+            'Persoonlijke Verzorging': '🧴',
+            'Verpakking & Statiegeld': '♻️',
+            'Bezorgkosten': '🚚',
+            'Abonnementen': '⭐',
+            'Overig': '📦'
+        };
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        
+        async function showProductModal(productName) {
+            // Create modal backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'product-modal-backdrop';
+            backdrop.style.cssText = `
+                position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+                display: flex; align-items: center; justify-content: center;
+                z-index: 1000; animation: fadeIn 0.2s ease;
+            `;
+            backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
+            
+            // Loading state
+            backdrop.innerHTML = `
+                <div style="background: var(--card-bg); border-radius: 16px; width: 90%; max-width: 800px; 
+                            max-height: 90vh; overflow: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
+                    <div style="padding: 2rem; text-align: center;">
+                        <div class="loading-spinner" style="margin: 0 auto;"></div>
+                        <p style="margin-top: 1rem; color: var(--gray-600);">Product laden...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(backdrop);
+            
+            try {
+                const response = await fetch(`/api/products/details/${encodeURIComponent(productName)}`);
+                const product = await response.json();
+                
+                if (product.error) throw new Error(product.error);
+                
+                const trendIcon = product.price_trend?.direction === 'up' ? '📈' : 
+                                  product.price_trend?.direction === 'down' ? '📉' : '➡️';
+                const trendColor = product.price_trend?.direction === 'up' ? 'var(--ah-red)' : 
+                                   product.price_trend?.direction === 'down' ? 'var(--ah-green)' : 'var(--gray-600)';
+                
+                backdrop.innerHTML = `
+                    <div style="background: var(--card-bg); border-radius: 16px; width: 90%; max-width: 800px; 
+                                max-height: 90vh; overflow: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
+                        <div style="background: var(--ah-blue); color: white; padding: 1.5rem; position: relative;">
+                            <button onclick="document.getElementById('product-modal-backdrop').remove()" 
+                                    style="position: absolute; right: 1rem; top: 1rem; background: rgba(255,255,255,0.2); 
+                                           border: none; color: white; width: 32px; height: 32px; border-radius: 50%; 
+                                           cursor: pointer; font-size: 1.2rem;">×</button>
+                            <h2 style="margin: 0; font-size: 1.5rem;">${product.original_name}</h2>
+                            <p style="margin: 0.5rem 0 0; opacity: 0.9;">
+                                ${categoryIcons[product.category] || '📋'} ${product.category}
+                            </p>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 1.5rem; 
+                                    background: var(--gray-50); border-bottom: 1px solid var(--border-color);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700; color: var(--ah-blue);">
+                                    ${formatCurrency(product.total_spent)}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray-600);">TOTAAL UITGEGEVEN</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700;">
+                                    ${product.total_quantity}×
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray-600);">GEKOCHT</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700;">
+                                    ${formatCurrency(product.avg_unit_price)}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray-600);">GEM. PRIJS</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.75rem; font-weight: 700; color: ${trendColor};">
+                                    ${trendIcon} ${Math.abs(product.price_trend?.percentage || 0)}%
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--gray-600);">PRIJSTREND</div>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                            <h3 style="margin: 0 0 1rem; font-size: 1rem;">💰 30-Jaar Projectie</h3>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${formatCurrency(product.projection.monthly)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-600);">per maand</div>
+                                </div>
+                                <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${formatCurrency(product.projection.yearly)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-600);">per jaar</div>
+                                </div>
+                                <div style="background: linear-gradient(135deg, var(--ah-orange) 0%, #FF8533 100%); 
+                                            padding: 1rem; border-radius: 8px; text-align: center; color: white;">
+                                    <div style="font-size: 1.25rem; font-weight: 700;">${formatCurrency(product.projection.thirty_years)}</div>
+                                    <div style="font-size: 0.75rem; opacity: 0.9;">over 30 jaar</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 1.5rem;">
+                            <h3 style="margin: 0 0 1rem; font-size: 1rem;">📋 Aankopen (${product.price_history.length})</h3>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--border-color);">
+                                            <th style="text-align: left; padding: 0.5rem;">Datum</th>
+                                            <th style="text-align: left; padding: 0.5rem;">Factuur</th>
+                                            <th style="text-align: right; padding: 0.5rem;">Aantal</th>
+                                            <th style="text-align: right; padding: 0.5rem;">Prijs/stuk</th>
+                                            <th style="text-align: right; padding: 0.5rem;">Totaal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${product.price_history.map(h => `
+                                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                                <td style="padding: 0.5rem;">${formatDate(h.invoice_date)}</td>
+                                                <td style="padding: 0.5rem;">
+                                                    <a href="/invoice/${h.invoice_id}" style="color: var(--ah-blue);">
+                                                        ${h.invoice_number || '#' + h.invoice_id}
+                                                    </a>
+                                                </td>
+                                                <td style="text-align: right; padding: 0.5rem;">${h.quantity}×</td>
+                                                <td style="text-align: right; padding: 0.5rem;">${formatCurrency(h.unit_price)}</td>
+                                                <td style="text-align: right; padding: 0.5rem; font-weight: 600;">${formatCurrency(h.price)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                backdrop.innerHTML = `
+                    <div style="background: var(--card-bg); border-radius: 16px; padding: 2rem; text-align: center;">
+                        <p style="color: var(--ah-red);">Fout: ${error.message}</p>
+                        <button onclick="document.getElementById('product-modal-backdrop').remove()" 
+                                class="btn btn-primary" style="margin-top: 1rem;">Sluiten</button>
+                    </div>
+                `;
+            }
+        }
+        
+        async function deleteCategory(categoryId, categoryName, event) {
+            event.stopPropagation(); // Prevent category selection
+            
+            const confirmed = confirm(`Weet je zeker dat je categorie "${categoryName}" wilt verwijderen?\n\nProducten in deze categorie worden verplaatst naar "Overig".`);
+            
+            if (!confirmed) return;
+            
+            try {
+                const response = await fetch(`/api/categories/${categoryId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast(`Categorie "${categoryName}" verwijderd. ${result.products_affected} producten verplaatst.`);
+                    
+                    // Reload data
+                    const [categoriesRes, productsRes, subcatsRes] = await Promise.all([
+                        fetch('/api/categories'),
+                        fetch('/api/products'),
+                        fetch('/api/subcategories')
+                    ]);
+                    
+                    categories = await categoriesRes.json();
+                    products = await productsRes.json();
+                    const subcatList = await subcatsRes.json();
+                    
+                    // Organize subcategories
+                    subcategories = {};
+                    subcatList.forEach(s => {
+                        if (!subcategories[s.category_name]) {
+                            subcategories[s.category_name] = [];
+                        }
+                        subcategories[s.category_name].push(s);
+                    });
+                    
+                    // Select first category if deleted was selected
+                    if (selectedCategory === categoryName) {
+                        selectedCategory = categories[0]?.name || 'Overig';
+                    }
+                    
+                    renderPage();
+                } else {
+                    showToast(result.error || 'Fout bij verwijderen', 'error');
+                }
+            } catch (error) {
+                showToast('Fout bij verwijderen', 'error');
+            }
+        }
+        
+        async function addCategory() {
+            const input = document.getElementById('new-category-name');
+            const name = input.value.trim();
+            
+            if (!name) {
+                showToast('Voer een naam in', 'error');
+                return;
+            }
+            
+            if (categories.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+                showToast('Deze categorie bestaat al', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, icon: '📁' })
+                });
+                
+                const newCat = await response.json();
+                categories.push({
+                    ...newCat,
+                    product_count: 0,
+                    color: '#9E9E9E',
+                    icon: '📁'
+                });
+                
+                input.value = '';
+                showToast(`Categorie "${name}" toegevoegd`);
+                renderPage();
+            } catch (error) {
+                showToast('Fout bij toevoegen', 'error');
+            }
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>
+
