@@ -1,8 +1,8 @@
-# 🧠 Appestat - Eetlust & Uitgaven Regulatie
+# 🧠 Appestat - Appie Analytics
 
 Appestat is een persoonlijke "voedsel-accountant" die je helpt je Albert Heijn-uitgaven te analyseren. De naam verwijst naar de **appestat**, het mechanisme in de hersenen dat de eetlust reguleert.
 
-Deze applicatie geeft je diepgaand inzicht in je uitgaven, helpt je patronen herkennen, en stimuleert gezonder of goedkoper boodschappen te doen.
+Deze applicatie geeft je diepgaand inzicht in je uitgaven, helpt je patronen herkennen, en stimuleert gezonder en/of prijsbewuster boodschappen te doen.
 
 ![Appestat](https://img.shields.io/badge/Appestat-Food%20Regulator-00ADE6)
 ![Python](https://img.shields.io/badge/Python-3.9+-blue)
@@ -56,7 +56,7 @@ Je kunt Appestat op twee manieren draaien:
 2. **Installatie**
    ```bash
    # Clone de repo
-   git clone https://github.com/jouwgebruikersnaam/appestat.git
+   git clone https://github.com/twetering/appestat.git
    cd appestat
 
    # Maak virtual environment (optioneel maar aanbevolen)
