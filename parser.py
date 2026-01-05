@@ -467,12 +467,19 @@ def extract_products_from_text(text: str, old_format: bool = False) -> List[Dict
         name_lower = original_name.lower()
         if any(skip in name_lower for skip in skip_patterns):
             continue
+        
+        # Skip regels die te kort zijn (waarschijnlijk geen echte producten)
         if len(original_name) < 3:
             continue
+            
+        # Skip regels met alleen cijfers
         if original_name.replace(" ", "").isdigit():
             continue
-
+        
+        # Normaliseer de productnaam (BONUS strippen etc.)
         display_name = normalize_product_name(original_name)
+        
+        # Skip duplicates (gebaseerd op genormaliseerde naam + prijs)
         product_key = f"{display_name}_{quantity}_{price_incl}"
         if product_key in seen_products:
             continue
