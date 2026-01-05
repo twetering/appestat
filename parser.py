@@ -433,6 +433,10 @@ def extract_products_from_text(text: str, old_format: bool = False) -> List[Dict
 
     # Kies regex en indexen afhankelijk van formaat
     if not old_format:
+        # Generiek pattern dat ALLE productregels vangt:
+        # [Productnaam] [Aantal] [9%|21%|Geen] [Excl btw] [Btw-bedrag] [Incl btw]
+        # De productnaam begint met een hoofdletter en bevat letters, spaties, cijfers, etc.
+        # Het eindigt wanneer we het patroon: [getal] [btw%] [bedrag] [bedrag] [bedrag] vinden
         pattern = re.compile(
             r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)\s+(\d+)\s+(9%|21%|Geen)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$",
             re.MULTILINE
@@ -444,6 +448,8 @@ def extract_products_from_text(text: str, old_format: bool = False) -> List[Dict
             "price_incl": 6
         }
     else:
+        # Voor 1 aug 2022 andere opmaak in facturen:
+        # [Productnaam] [Aantal] [Per stuk] [Totaal]
         pattern = re.compile(
             r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)$",
             re.MULTILINE
