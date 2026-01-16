@@ -3,7 +3,7 @@ PDF Parser for Albert Heijn invoices
 Extracts invoice data and products from AH PDFs
 """
 
-import os
+import os, sys
 import re
 from datetime import datetime
 from pathlib import Path
@@ -418,36 +418,58 @@ def parse_dutch_date(date_str: str) -> str:
     return None
 
 
-def extract_products_from_text(text: str) -> List[Dict]:
-    """Extract products from invoice text using a universal pattern"""
+def extract_products_from_text(text: str, old_format: bool = False) -> List[Dict]:
+    """Extract products from invoice text using a universal pattern or old format"""
     products = []
     seen_products = set()
-    
-    # Generiek pattern dat ALLE productregels vangt:
-    # [Productnaam] [Aantal] [9%|21%|Geen] [Excl btw] [Btw-bedrag] [Incl btw]
-    # De productnaam begint met een hoofdletter en bevat letters, spaties, cijfers, etc.
-    # Het eindigt wanneer we het patroon: [getal] [btw%] [bedrag] [bedrag] [bedrag] vinden
-    
-    product_pattern = re.compile(
-        r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)\s+(\d+)\s+(9%|21%|Geen)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$",
-        re.MULTILINE
-    )
-    
-    # Zoek alle matches
-    for match in product_pattern.finditer(text):
-        original_name = match.group(1).strip()
-        quantity = int(match.group(2))
-        btw = match.group(3)
-        price_incl = float(match.group(6).replace(",", "."))
-        
-        # Skip ongewenste regels
-        skip_patterns = [
-            "statiegeld", "retour", "klapkrat", "bezorgkosten", "verpakkingsmateriaal",
-            "plastic verpakking", "koopzegels", "pagina ", "datum ", "factuurnummer",
-            "debiteurnummer", "bestelling", "afleverdatum", "bezorgadres", "totaal",
-            "boodschappen", "alle bedragen", "vragen over"
-        ]
-        
+
+    # Skip patterns (shared)
+    skip_patterns = [
+        "statiegeld", "retour", "klapkrat", "bezorgkosten", "verpakkingsmateriaal",
+        "plastic verpakking", "koopzegels", "pagina ", "datum ", "factuurnummer",
+        "debiteurnummer", "bestelling", "afleverdatum", "bezorgadres", "totaal",
+        "boodschappen", "alle bedragen", "vragen over"
+    ]
+
+    # Kies regex en indexen afhankelijk van formaat
+    if not old_format:
+        # Generiek pattern dat ALLE productregels vangt:
+        # [Productnaam] [Aantal] [9%|21%|Geen] [Excl btw] [Btw-bedrag] [Incl btw]
+        # De productnaam begint met een hoofdletter en bevat letters, spaties, cijfers, etc.
+        # Het eindigt wanneer we het patroon: [getal] [btw%] [bedrag] [bedrag] [bedrag] vinden
+        pattern = re.compile(
+            r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)\s+(\d+)\s+(9%|21%|Geen)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$",
+            re.MULTILINE
+        )
+        group_map = {
+            "name": 1,
+            "quantity": 2,
+            "btw": 3,
+            "price_incl": 6
+        }
+    else:
+        # Voor 1 aug 2022 andere opmaak in facturen:
+        # [Productnaam] [Aantal] [Per stuk] [Totaal]
+        pattern = re.compile(
+            r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)$",
+            re.MULTILINE
+        )
+        group_map = {
+            "name": 1,
+            "quantity": 2,
+            "btw": None,
+            "price_incl": 4
+        }
+
+    for match in pattern.finditer(text):
+        original_name = match.group(group_map["name"]).strip()
+        quantity = int(match.group(group_map["quantity"]))
+        if group_map["btw"] is not None:
+            btw = match.group(group_map["btw"])
+        else:
+            btw = None
+        price_incl = float(match.group(group_map["price_incl"]).replace(",", "."))
+
         name_lower = original_name.lower()
         if any(skip in name_lower for skip in skip_patterns):
             continue
@@ -468,10 +490,10 @@ def extract_products_from_text(text: str) -> List[Dict]:
         if product_key in seen_products:
             continue
         seen_products.add(product_key)
-        
+
         category = categorize_product(original_name)
         subcategory = determine_subcategory(original_name, category)
-        
+
         products.append({
             "name": display_name,
             "original_name_raw": original_name,
@@ -481,7 +503,7 @@ def extract_products_from_text(text: str) -> List[Dict]:
             "category": category,
             "subcategory": subcategory
         })
-    
+
     return products
 
 
@@ -529,8 +551,17 @@ def parse_invoice(pdf_path: str) -> Tuple[Dict, List[Dict], str]:
             if savings_match:
                 result["savings"] = float(savings_match.group(1).replace(",", "."))
             
+            # Bepaal of het oude formaat gebruikt moet worden (voor 1 augustus 2022)
+            old_format = False
+            if result["date"]:
+                try:
+                    invoice_date = datetime.strptime(result["date"], "%Y-%m-%d")
+                    if invoice_date < datetime(2022, 8, 1):
+                        old_format = True
+                except Exception:
+                    pass
             # Extract producten
-            products = extract_products_from_text(raw_text)
+            products = extract_products_from_text(raw_text, old_format=old_format)
     
     except Exception as e:
         print(f"Error parsing {pdf_path}: {e}")
@@ -674,13 +705,22 @@ def get_all_keywords() -> Dict[str, List[str]]:
 
 if __name__ == "__main__":
     # Test parsing
-    from database import init_database
-    
-    init_database()
-    
-    results = import_all_invoices()
-    print(f"Import completed:")
-    print(f"  Success: {results['success']}")
-    print(f"  Skipped: {results['skipped']}")
-    print(f"  Errors: {results['errors']}")
+    if len(sys.argv) <= 1:
+        from database import init_database
 
+        init_database()
+
+        results = import_all_invoices()
+        print(f"Import completed:")
+        print(f"  Success: {results['success']}")
+        print(f"  Skipped: {results['skipped']}")
+        print(f"  Errors: {results['errors']}")
+    else:
+        factuur = sys.argv[1]
+        pdf_path = "data/invoices/" + factuur
+        invoice_data, products, raw_text = parse_invoice(pdf_path)
+        print("Invoice Data:")
+        print(invoice_data)
+        print("Products:")
+        for p in products:
+            print(p)
