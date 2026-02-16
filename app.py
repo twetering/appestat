@@ -13,7 +13,7 @@ from database import (
     init_database, get_analysis_data, get_all_invoices, 
     get_invoice_with_products, get_all_products, get_all_categories,
     update_product_category, validate_product, add_validation_feedback,
-    add_category, get_products_by_category, get_validation_stats,
+    add_category, delete_category, get_products_by_category, get_validation_stats,
     migrate_normalize_product_names, get_overig_products_summary,
     bulk_update_category_by_name, get_product_details, get_all_unique_products,
     get_smart_savings_insights, get_all_subcategories, get_subcategories_for_category,
@@ -195,36 +195,15 @@ def api_add_category():
 @app.route("/api/categories/<int:category_id>", methods=["DELETE"])
 def api_delete_category(category_id):
     """Delete a category"""
-    from database import get_connection
-    conn = get_connection()
-    cursor = conn.cursor()
+    result = delete_category(category_id)
     
-    # First check if category exists
-    cursor.execute("SELECT name FROM categories WHERE id = ?", (category_id,))
-    category = cursor.fetchone()
-    
-    if not category:
-        conn.close()
-        return jsonify({"error": "Category not found"}), 404
-    
-    # Check if there are products using this category
-    cursor.execute("""
-        SELECT COUNT(*) as count 
-        FROM products 
-        WHERE user_category = ? OR auto_category = ?
-    """, (category['name'], category['name']))
-    
-    product_count = cursor.fetchone()['count']
-    
-    # Delete the category (products will be reassigned to 'Overig' via trigger or we handle it)
-    cursor.execute("DELETE FROM categories WHERE id = ?", (category_id,))
-    conn.commit()
-    conn.close()
+    if not result["success"]:
+        return jsonify({"error": result["error"]}), 404
     
     return jsonify({
         "status": "deleted", 
-        "name": category['name'],
-        "products_affected": product_count
+        "name": result["name"],
+        "products_affected": result["products_affected"]
     })
 
 
