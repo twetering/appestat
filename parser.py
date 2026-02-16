@@ -661,7 +661,12 @@ def import_all_invoices(directory: str = "data/invoices", force: bool = False) -
 def add_keyword_to_category(category: str, keyword: str) -> Dict:
     """
     Add a keyword to a category.
-    Note: This modifies the in-memory CATEGORY_KEYWORDS but doesn't persist to file.
+
+    WARNING: This only modifies the in-memory CATEGORY_KEYWORDS dict. Changes are
+    lost when the application restarts. There is no persistence to disk or database.
+
+    TODO: Persist keyword changes to the database (category_rules table) so they
+    survive restarts. See https://github.com/twetering/appestat/issues for tracking.
     """
     global CATEGORY_KEYWORDS
     
@@ -682,7 +687,12 @@ def add_keyword_to_category(category: str, keyword: str) -> Dict:
 def remove_keyword_from_category(category: str, keyword: str) -> Dict:
     """
     Remove a keyword from a category.
-    Note: This modifies the in-memory CATEGORY_KEYWORDS but doesn't persist to file.
+
+    WARNING: This only modifies the in-memory CATEGORY_KEYWORDS dict. Changes are
+    lost when the application restarts. There is no persistence to disk or database.
+
+    TODO: Persist keyword changes to the database (category_rules table) so they
+    survive restarts. See https://github.com/twetering/appestat/issues for tracking.
     """
     global CATEGORY_KEYWORDS
     
