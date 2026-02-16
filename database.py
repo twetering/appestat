@@ -457,7 +457,7 @@ def validate_product(product_id: int, is_valid: bool, notes: str = None):
     
     cursor.execute("""
         UPDATE products 
-        SET is_validated = ?, validation_notes = ?, updated_at = CURRENT_TIMESTAMP
+        SET is_validated = ?, validation_notes = ?
         WHERE id = ?
     """, (1 if is_valid else 0, notes, product_id))
     
