@@ -457,7 +457,7 @@ def validate_product(product_id: int, is_valid: bool, notes: str = None):
     
     cursor.execute("""
         UPDATE products 
-        SET is_validated = ?, validation_notes = ?, updated_at = CURRENT_TIMESTAMP
+        SET is_validated = ?, validation_notes = ?
         WHERE id = ?
     """, (1 if is_valid else 0, notes, product_id))
     
@@ -514,6 +514,33 @@ def add_category(name: str, color: str = "#9E9E9E", icon: str = "📁") -> int:
     conn.commit()
     conn.close()
     return category_id
+
+
+def delete_category(category_id: int) -> Dict:
+    """Delete a category by ID. Returns info about the deleted category."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT name FROM categories WHERE id = ?", (category_id,))
+    category = cursor.fetchone()
+
+    if not category:
+        conn.close()
+        return {"success": False, "error": "Category not found"}
+
+    cursor.execute("""
+        SELECT COUNT(*) as count 
+        FROM products 
+        WHERE user_category = ? OR auto_category = ?
+    """, (category['name'], category['name']))
+
+    product_count = cursor.fetchone()['count']
+
+    cursor.execute("DELETE FROM categories WHERE id = ?", (category_id,))
+    conn.commit()
+    conn.close()
+
+    return {"success": True, "name": category['name'], "products_affected": product_count}
 
 
 def get_products_by_category(category: str) -> List[Dict]:
