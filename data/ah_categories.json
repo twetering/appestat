@@ -1,0 +1,277 @@
+{
+  "source": "ah.nl",
+  "version": "3.0",
+  "last_updated": "2025-01-01",
+  "note": "Complete AH categorieën met subcategorieën en keywords",
+  "categories": {
+    "Groente & Aardappelen": {
+      "icon": "🥦",
+      "color": "#7CB518",
+      "subcategories": [
+        {"name": "Groente", "icon": "🥬", "keywords": ["tomaat", "paprika", "komkommer", "sla", "spinazie", "broccoli", "bloemkool", "wortel", "ui", "knoflook", "champignon", "courgette", "aubergine", "prei", "selderij", "biet", "radijs", "snoepgroente", "rucola", "veldsla", "ijsbergsla", "andijvie", "bosui", "pompoen", "pastinaak", "knolselderij", "spitskool", "boerenkool", "spruitjes", "sperziebonen", "peultjes"]},
+        {"name": "Aardappelen", "icon": "🥔", "keywords": ["aardappel", "krieltje", "puree", "aardappelpuree", "vastkokend", "kruimig", "nieuwe aardappel", "zoete aardappel", "roseval", "opperdoezer"]},
+        {"name": "Kruiden vers", "icon": "🌿", "keywords": ["peterselie", "basilicum", "bieslook", "koriander", "dille", "munt", "tijm", "rozemarijn", "dragon", "kervel", "salie", "laurier"]}
+      ],
+      "keywords": ["groente", "aardappel", "sla", "tomaat", "paprika", "komkommer", "wortel", "ui", "knoflook", "champignon", "broccoli", "spinazie", "prei", "courgette", "bloemkool", "krieltje", "snoepgroente", "trostomaat", "cherry", "roma"]
+    },
+    "Fruit & Verse sappen": {
+      "icon": "🍎",
+      "color": "#E63946",
+      "subcategories": [
+        {"name": "Fruit", "icon": "🍎", "keywords": ["appel", "appels", "peer", "peren", "banaan", "bananen", "sinaasappel", "sinaasappels", "mandarijn", "mandarijnen", "citroen", "citroenen", "limoen", "limoenen", "druif", "druiven", "aardbei", "aardbeien", "framboos", "frambozen", "bosbes", "bosbessen", "braam", "bramen", "kers", "kersen", "pruim", "pruimen", "perzik", "perziken", "nectarine", "nectarines", "mango", "ananas", "meloen", "meloenen", "watermeloen", "kiwi", "granaatappel", "passievrucht", "avocado", "dadel", "dadels", "vijg", "vijgen", "elstar", "jonagold", "granny smith", "chiquita"]},
+        {"name": "Verse sappen", "icon": "🧃", "keywords": ["vers sap", "jus d'orange", "sinaasappelsap vers", "fruitsap vers", "smoothie vers"]},
+        {"name": "Fruitsalades", "icon": "🥗", "keywords": ["fruitsalade", "fruitbowl", "fruit mix"]}
+      ],
+      "keywords": ["appel", "appels", "peer", "peren", "banaan", "bananen", "sinaasappel", "sinaasappels", "mandarijn", "mandarijnen", "druif", "druiven", "aardbei", "aardbeien", "mango", "ananas", "kiwi", "citroen", "citroenen", "limoen", "limoenen", "meloen", "meloenen", "framboos", "frambozen", "bosbes", "bosbessen", "vers sap", "smoothie", "chiquita"]
+    },
+    "Maaltijden & Salades": {
+      "icon": "🥗",
+      "color": "#2A9D8F",
+      "subcategories": [
+        {"name": "Kant-en-klaar maaltijden", "icon": "🍽️", "keywords": ["maaltijd", "ovenschotel", "stamppot", "nasi", "bami", "lasagne", "pasta kant-en-klaar", "macaroni"]},
+        {"name": "Salades", "icon": "🥗", "keywords": ["salade", "lunchsalade", "caesar", "griekse salade", "caprese", "pastasalade", "aardappelsalade", "kipsalade"]},
+        {"name": "Pizza", "icon": "🍕", "keywords": ["pizza", "pinsa", "pizzetta", "pizza vers"]},
+        {"name": "Sushi & Aziatisch", "icon": "🍣", "keywords": ["sushi", "poke bowl", "dim sum", "gyoza", "loempia", "sate"]}
+      ],
+      "keywords": ["maaltijd", "salade", "pizza", "lasagne", "quiche", "ovenschotel", "stamppot", "nasi", "bami", "sushi", "poke bowl", "wrap", "burrito"]
+    },
+    "Vlees": {
+      "icon": "🥩",
+      "color": "#C1121F",
+      "subcategories": [
+        {"name": "Kip", "icon": "🍗", "keywords": ["kip", "kipfilet", "kippenpoot", "kippenvleugel", "kipgehakt", "kipdij", "drumstick", "scharrelkip"]},
+        {"name": "Rund", "icon": "🥩", "keywords": ["rund", "biefstuk", "entrecote", "rosbief", "ossenhaas", "rundergehakt", "tartaar", "bavette", "ribeye"]},
+        {"name": "Varken", "icon": "🐷", "keywords": ["varken", "varkenshaas", "schnitzel", "speklapje", "varkensfilet", "braadworst", "spareribs", "pulled pork", "varkensgehakt"]},
+        {"name": "Lam & Wild", "icon": "🍖", "keywords": ["lam", "lamsbout", "lamsrack", "eend", "kalkoen", "konijn", "wild"]}
+      ],
+      "keywords": ["kipfilet", "gehakt", "biefstuk", "schnitzel", "worst", "kip", "rund", "varken", "hamburger", "shoarma", "gyros", "spareribs", "pulled pork"]
+    },
+    "Vis": {
+      "icon": "🐟",
+      "color": "#0077B6",
+      "subcategories": [
+        {"name": "Verse vis", "icon": "🐟", "keywords": ["zalm", "kabeljauw", "schelvis", "tilapia", "pangasius", "forel", "zeebaars", "dorade", "scholfilet"]},
+        {"name": "Gerookte vis", "icon": "🐟", "keywords": ["gerookte zalm", "makreel", "haring", "paling", "forel gerookt"]},
+        {"name": "Zeevruchten", "icon": "🦐", "keywords": ["garnaal", "scampi", "mossel", "oester", "kreeft", "krab", "inktvis", "calamares", "coquilles"]},
+        {"name": "Visconserven", "icon": "🥫", "keywords": ["tonijn blik", "sardine", "ansjovis", "makreel blik"]}
+      ],
+      "keywords": ["zalm", "tonijn", "kabeljauw", "garnaal", "vis", "forel", "makreel", "haring", "kibbeling", "visstick", "gerookte zalm", "scampi"]
+    },
+    "Vegetarisch & Vegan": {
+      "icon": "🌱",
+      "color": "#52B788",
+      "subcategories": [
+        {"name": "Vleesvervangers", "icon": "🌿", "keywords": ["vegetarisch", "vegan", "tofu", "tempeh", "seitan", "beyond", "impossible", "vivera", "garden gourmet", "quorn", "vega burger", "vega gehakt"]},
+        {"name": "Plantaardige zuivel", "icon": "🥛", "keywords": ["havermelk", "sojamelk", "amandelmelk", "kokosmelk", "plantaardige yoghurt", "vegan kaas"]}
+      ],
+      "keywords": ["vegetarisch", "vegan", "plantaardig", "tofu", "tempeh", "seitan", "beyond", "vivera", "garden gourmet", "quorn", "falafel", "hummus"]
+    },
+    "Vleeswaren": {
+      "icon": "🥓",
+      "color": "#BC6C25",
+      "subcategories": [
+        {"name": "Ham", "icon": "🍖", "keywords": ["ham", "achterham", "schouderham", "katenspek", "parmaham", "serrano", "coppa"]},
+        {"name": "Worst", "icon": "🌭", "keywords": ["salami", "cervelaat", "chorizo", "fuet", "mortadella", "leverworst", "boterhamworst"]},
+        {"name": "Overig beleg", "icon": "🥩", "keywords": ["rosbief", "pastrami", "filet americain", "kipfilet beleg", "bacon", "spek", "ontbijtspek"]}
+      ],
+      "keywords": ["ham", "salami", "cervelaat", "rookvlees", "pastrami", "chorizo", "parmaham", "bacon", "ontbijtspek", "filet americain", "kipfilet beleg"]
+    },
+    "Kaas": {
+      "icon": "🧀",
+      "color": "#FFBA08",
+      "subcategories": [
+        {"name": "Hollandse kaas", "icon": "🧀", "keywords": ["gouda", "edammer", "maaslander", "zaanlander", "jong belegen", "belegen", "extra belegen", "oud", "kaasplakken", "geraspte kaas"]},
+        {"name": "Buitenlandse kaas", "icon": "🧀", "keywords": ["mozzarella", "parmezaan", "pecorino", "brie", "camembert", "gorgonzola", "roquefort", "feta", "manchego", "gruyere", "emmentaler", "cheddar", "geitenkaas"]},
+        {"name": "Smeerkaas", "icon": "🧀", "keywords": ["smeerkaas", "boursin", "philadelphia", "zuivelspread"]}
+      ],
+      "keywords": ["kaas", "gouda", "mozzarella", "parmezaan", "brie", "feta", "geitenkaas", "cheddar", "belegen", "jong belegen", "geraspte kaas", "kaasplakken"]
+    },
+    "Zuivel & Eieren": {
+      "icon": "🥛",
+      "color": "#00ADE6",
+      "subcategories": [
+        {"name": "Melk", "icon": "🥛", "keywords": ["melk", "halfvolle melk", "volle melk", "magere melk", "karnemelk", "haverdrink", "sojadrink", "amandeldrink"]},
+        {"name": "Yoghurt & Kwark", "icon": "🥄", "keywords": ["yoghurt", "kwark", "skyr", "cottage cheese", "griekse yoghurt"]},
+        {"name": "Room & Vla", "icon": "🍮", "keywords": ["slagroom", "kookroom", "room", "vla", "pudding", "toetje", "panna cotta", "creme fraiche"]},
+        {"name": "Boter & Margarine", "icon": "🧈", "keywords": ["boter", "roomboter", "margarine", "becel", "blue band"]},
+        {"name": "Eieren", "icon": "🥚", "keywords": ["ei", "eieren", "scharreleieren", "bio eieren", "vrije uitloop"]}
+      ],
+      "keywords": ["melk", "yoghurt", "kwark", "room", "boter", "eieren", "vla", "slagroom", "margarine", "creme fraiche", "skyr"]
+    },
+    "Bakkerij": {
+      "icon": "🍞",
+      "color": "#D4A574",
+      "subcategories": [
+        {"name": "Brood", "icon": "🍞", "keywords": ["brood", "wit brood", "bruin brood", "volkoren", "meergranen", "baguette", "ciabatta", "focaccia", "pistolet", "bol", "afbakbrood", "toast"]},
+        {"name": "Croissants & Gebak", "icon": "🥐", "keywords": ["croissant", "pain au chocolat", "krentenbol", "rozijnenbrood", "donut", "muffin"]},
+        {"name": "Crackers & Toast", "icon": "🍞", "keywords": ["beschuit", "cracker", "knäckebröd", "toast"]},
+        {"name": "Taart & Gebak", "icon": "🎂", "keywords": ["taart", "gebak", "vlaai", "cake", "appeltaart", "slagroomtaart"]}
+      ],
+      "keywords": ["brood", "croissant", "beschuit", "cracker", "baguette", "pistolet", "toast", "taart", "vlaai", "cake", "volkoren", "afbakbrood"]
+    },
+    "Borrel, Chips & Snacks": {
+      "icon": "🥜",
+      "color": "#F4A261",
+      "subcategories": [
+        {"name": "Chips", "icon": "🍟", "keywords": ["chips", "lay's", "pringles", "doritos", "cheetos", "bugles", "wokkels", "takis"]},
+        {"name": "Noten", "icon": "🥜", "keywords": ["noten", "pinda", "cashew", "amandel", "walnoot", "pistache", "notenmix", "borrelnoten"]},
+        {"name": "Hartige snacks", "icon": "🍿", "keywords": ["popcorn", "zoutje", "toastje", "bitterbal", "kaassouffle", "frikandel", "kroket"]}
+      ],
+      "keywords": ["chips", "noten", "pinda", "cashew", "borrelnoten", "popcorn", "zoutje", "lay's", "pringles", "doritos"]
+    },
+    "Pasta, Rijst & Wereldkeuken": {
+      "icon": "🍝",
+      "color": "#FFB347",
+      "subcategories": [
+        {"name": "Pasta", "icon": "🍝", "keywords": ["pasta", "spaghetti", "penne", "fusilli", "tagliatelle", "lasagne bladen", "macaroni", "farfalle"]},
+        {"name": "Rijst", "icon": "🍚", "keywords": ["rijst", "basmati", "jasmijn", "risotto", "zilvervlies", "wilde rijst"]},
+        {"name": "Noodles & Aziatisch", "icon": "🍜", "keywords": ["noodles", "mie", "ramen", "udon", "soba", "woksaus", "ketjap", "sojasaus", "teriyaki"]},
+        {"name": "Wereldkeuken", "icon": "🌮", "keywords": ["couscous", "bulgur", "quinoa", "tortilla", "taco", "wraps", "currysaus", "kokosmelk", "sambal"]}
+      ],
+      "keywords": ["pasta", "spaghetti", "rijst", "noodles", "couscous", "tortilla", "woksaus", "penne", "basmati", "quinoa"]
+    },
+    "Soepen, Sauzen & Kruiden": {
+      "icon": "🫙",
+      "color": "#FF7043",
+      "subcategories": [
+        {"name": "Soepen", "icon": "🍲", "keywords": ["soep", "bouillon", "tomatensoep", "kippensoep", "groentesoep", "erwtensoep"]},
+        {"name": "Pastasauzen", "icon": "🍅", "keywords": ["pastasaus", "pesto", "arrabiata", "bolognese", "carbonara", "tomatensaus"]},
+        {"name": "Sauzen", "icon": "🫙", "keywords": ["mayonaise", "ketchup", "mosterd", "dressing", "vinaigrette", "barbecuesaus", "currysaus"]},
+        {"name": "Olie & Azijn", "icon": "🫒", "keywords": ["olie", "olijfolie", "zonnebloemolie", "azijn", "balsamico"]},
+        {"name": "Kruiden & Specerijen", "icon": "🧂", "keywords": ["kruid", "specerij", "peper", "zout", "paprikapoeder", "kerrie", "kurkuma", "komijn", "oregano", "basilicum gedroogd"]}
+      ],
+      "keywords": ["soep", "saus", "pastasaus", "pesto", "mayonaise", "ketchup", "mosterd", "olie", "olijfolie", "azijn", "bouillon", "kruiden"]
+    },
+    "Koek, Snoep & Chocolade": {
+      "icon": "🍫",
+      "color": "#AB47BC",
+      "subcategories": [
+        {"name": "Chocolade", "icon": "🍫", "keywords": ["chocolade", "chocola", "bonbon", "praline", "reep", "tablet", "tony", "milka", "verkade", "lindt"]},
+        {"name": "Koekjes", "icon": "🍪", "keywords": ["koek", "biscuit", "speculaas", "stroopwafel", "gevulde koek", "bastogne", "oreo", "liga"]},
+        {"name": "Snoep", "icon": "🍬", "keywords": ["snoep", "winegum", "zuurtje", "lolly", "toffee", "karamel", "haribo", "katja"]},
+        {"name": "Drop", "icon": "⚫", "keywords": ["drop", "licorice", "zoethout", "klene", "venco"]},
+        {"name": "Kauwgom & Mints", "icon": "🍬", "keywords": ["kauwgom", "mentos", "sportlife", "smint"]}
+      ],
+      "keywords": ["chocolade", "koek", "snoep", "drop", "stroopwafel", "speculaas", "bonbon", "winegum", "haribo", "tony chocolonely"]
+    },
+    "Ontbijtgranen & Beleg": {
+      "icon": "🥣",
+      "color": "#FFC300",
+      "subcategories": [
+        {"name": "Ontbijtgranen", "icon": "🥣", "keywords": ["ontbijtgranen", "cornflakes", "muesli", "granola", "cruesli", "havermout", "havervlokken", "brinta", "pap"]},
+        {"name": "Zoet beleg", "icon": "🍯", "keywords": ["jam", "marmelade", "honing", "stroop", "pindakaas", "chocopasta", "nutella", "speculoospasta", "hagelslag", "vlokken", "muisjes"]}
+      ],
+      "keywords": ["ontbijtgranen", "cornflakes", "muesli", "granola", "havermout", "jam", "pindakaas", "hagelslag", "nutella", "honing"]
+    },
+    "Tussendoortjes": {
+      "icon": "🍪",
+      "color": "#E9C46A",
+      "subcategories": [
+        {"name": "Mueslirepen", "icon": "🍫", "keywords": ["mueslireep", "cereal bar", "nature valley", "nakd"]},
+        {"name": "Rijstwafels & Crackers", "icon": "🍘", "keywords": ["rijstwafel", "maiswafels", "crackers"]},
+        {"name": "Noten & Gedroogd fruit", "icon": "🥜", "keywords": ["studentenhaver", "noten mix", "gedroogd fruit", "rozijnen", "cranberry", "dadel", "vijg gedroogd"]}
+      ],
+      "keywords": ["mueslireep", "rijstwafel", "crackers", "studentenhaver", "gedroogd fruit", "rozijnen", "liga milkbreak"]
+    },
+    "Diepvries": {
+      "icon": "❄️",
+      "color": "#48CAE4",
+      "subcategories": [
+        {"name": "IJs", "icon": "🍨", "keywords": ["ijs", "roomijs", "sorbet", "magnum", "cornetto", "ben & jerry", "häagen"]},
+        {"name": "Diepvriesmaaltijden", "icon": "🍽️", "keywords": ["diepvriespizza", "diepvriesmaaltijd", "lasagne diepvries"]},
+        {"name": "Diepvriesgroenten", "icon": "🥦", "keywords": ["diepvriesgroenten", "doperwten diepvries", "spinazie diepvries"]},
+        {"name": "Diepvriessnacks", "icon": "🍟", "keywords": ["friet", "patat", "visstick", "fishstick", "bitterballen diepvries", "frikandel diepvries"]}
+      ],
+      "keywords": ["diepvries", "ijs", "roomijs", "magnum", "cornetto", "friet", "visstick", "ben & jerry"]
+    },
+    "Koffie & Thee": {
+      "icon": "☕",
+      "color": "#6F4E37",
+      "subcategories": [
+        {"name": "Koffie", "icon": "☕", "keywords": ["koffie", "koffiebonen", "gemalen koffie", "filterkoffie", "espresso", "nespresso", "dolce gusto", "senseo", "oploskoffie"]},
+        {"name": "Thee", "icon": "🍵", "keywords": ["thee", "theezakje", "groene thee", "zwarte thee", "kruidenthee", "rooibos", "pukka", "pickwick"]}
+      ],
+      "keywords": ["koffie", "thee", "espresso", "nespresso", "senseo", "pukka", "pickwick", "cappuccino"]
+    },
+    "Frisdrank & Water": {
+      "icon": "🥤",
+      "color": "#4FC3F7",
+      "subcategories": [
+        {"name": "Frisdrank", "icon": "🥤", "keywords": ["cola", "fanta", "sprite", "7up", "pepsi", "sinas", "cassis", "rivella", "fernandes"]},
+        {"name": "Ice tea & Energy", "icon": "⚡", "keywords": ["ice tea", "lipton", "fuze", "red bull", "energy drink", "monster", "aa drink"]},
+        {"name": "Water", "icon": "💧", "keywords": ["water", "spa", "sourcy", "chaudfontaine", "bar le duc", "mineraalwater"]},
+        {"name": "Siroop & Limonade", "icon": "🍹", "keywords": ["limonade", "siroop", "ranja", "karvan cevitam", "roosvicee", "tonic"]}
+      ],
+      "keywords": ["cola", "fanta", "sprite", "water", "spa", "ice tea", "red bull", "energy", "limonade", "siroop"]
+    },
+    "Bier, Wijn & Aperitieven": {
+      "icon": "🍷",
+      "color": "#722F37",
+      "subcategories": [
+        {"name": "Bier", "icon": "🍺", "keywords": ["bier", "pils", "hertog jan", "heineken", "amstel", "grolsch", "brand", "speciaalbier", "ipa", "wit bier", "radler", "0.0"]},
+        {"name": "Wijn", "icon": "🍷", "keywords": ["wijn", "rode wijn", "witte wijn", "rose", "prosecco", "cava", "champagne"]},
+        {"name": "Sterke drank", "icon": "🥃", "keywords": ["whisky", "wodka", "gin", "rum", "likeur", "port", "sherry", "jenever"]}
+      ],
+      "keywords": ["bier", "wijn", "prosecco", "whisky", "wodka", "gin", "rum", "champagne", "heineken", "hertog jan"]
+    },
+    "Drogisterij": {
+      "icon": "🧴",
+      "color": "#F48FB1",
+      "subcategories": [
+        {"name": "Haarverzorging", "icon": "💇", "keywords": ["shampoo", "conditioner", "haargel", "haarspray"]},
+        {"name": "Huidverzorging", "icon": "🧴", "keywords": ["bodylotion", "douchegel", "zeep", "handzeep", "zonnebrand", "aftersun"]},
+        {"name": "Mondverzorging", "icon": "🦷", "keywords": ["tandpasta", "tandenborstel", "mondwater", "floss"]},
+        {"name": "Persoonlijke hygiëne", "icon": "🚿", "keywords": ["deodorant", "scheermesje", "scheerschuim", "maandverband", "tampon"]}
+      ],
+      "keywords": ["shampoo", "tandpasta", "deodorant", "douchegel", "zeep", "bodylotion", "zonnebrand", "scheermesje"]
+    },
+    "Huishouden": {
+      "icon": "🧹",
+      "color": "#78909C",
+      "subcategories": [
+        {"name": "Schoonmaakmiddelen", "icon": "🧹", "keywords": ["allesreiniger", "wc reiniger", "glasreiniger", "ontkalker", "bleek", "schoonmaakazijn"]},
+        {"name": "Wasmiddelen", "icon": "🧺", "keywords": ["wasmiddel", "wasverzachter", "vlekkenverwijderaar"]},
+        {"name": "Afwasmiddelen", "icon": "🍽️", "keywords": ["afwasmiddel", "vaatwas", "vaatwasmiddel", "vaatwastablet"]},
+        {"name": "Papier & Zakken", "icon": "🧻", "keywords": ["toiletpapier", "keukenpapier", "tissues", "vuilniszak", "aluminiumfolie", "huishoudfolie", "bakpapier"]}
+      ],
+      "keywords": ["schoonmaak", "allesreiniger", "wasmiddel", "afwasmiddel", "toiletpapier", "keukenpapier", "vuilniszak"]
+    },
+    "Baby & Kind": {
+      "icon": "👶",
+      "color": "#90CAF9",
+      "subcategories": [
+        {"name": "Luiers", "icon": "👶", "keywords": ["luier", "pampers", "billendoekje"]},
+        {"name": "Babyvoeding", "icon": "🍼", "keywords": ["babyvoeding", "potje", "fruithapje", "babymelk", "flesvoeding"]},
+        {"name": "Babyverzorging", "icon": "🧴", "keywords": ["babylotion", "babyzalf", "fopspeen"]}
+      ],
+      "keywords": ["luier", "pampers", "babyvoeding", "billendoekje", "fruithapje"]
+    },
+    "Huisdier": {
+      "icon": "🐕",
+      "color": "#A1887F",
+      "subcategories": [
+        {"name": "Hondenvoer", "icon": "🐕", "keywords": ["hondenvoer", "hondenbrokken", "hondensnack"]},
+        {"name": "Kattenvoer", "icon": "🐈", "keywords": ["kattenvoer", "kattenbrokken", "kattensnack", "kattenbak", "kattenbakvulling"]}
+      ],
+      "keywords": ["hondenvoer", "kattenvoer", "kattenbak", "kattenbakvulling", "diervoeding"]
+    },
+    "Verpakking & Statiegeld": {
+      "icon": "📦",
+      "color": "#90A4AE",
+      "subcategories": [],
+      "keywords": ["statiegeld", "krat", "fles statiegeld", "retour", "plastic tas", "draagtas", "emballage"]
+    },
+    "Bezorgkosten": {
+      "icon": "🚚",
+      "color": "#607D8B",
+      "subcategories": [],
+      "keywords": ["bezorgkosten", "thuisbezorgd", "bezorging", "afhalen"]
+    },
+    "Overig": {
+      "icon": "📋",
+      "color": "#9E9E9E",
+      "subcategories": [],
+      "keywords": []
+    }
+  }
+}

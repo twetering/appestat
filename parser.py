@@ -1,686 +1,765 @@
 """
-PDF Parser for Albert Heijn invoices
-Extracts invoice data and products from AH PDFs
+Unified PDF Parser for Albert Heijn invoices and kassabonnen
+Handles both online invoices (1069835-xxx.pdf) and store receipts (AH_kassabon_xxx.pdf)
 """
 
 import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pdfplumber
 
 from database import (
-    calculate_file_hash, invoice_exists, save_invoice, save_products,
-    get_all_categories
+    calculate_file_hash, get_all_product_names, invoice_exists, save_invoice, save_products
 )
 
 
+# ============================================================
+# ABBREVIATION MAP for kassabon shortened names
+# ============================================================
+
+ABBREVIATION_MAP = {
+    # Groente & Fruit
+    "SNOEP PAPRIK": "AH Snoeppaprika",
+    "TROSTOMAAT": "AH Trostomaten",
+    "BIO POMPOEN": "AH Biologische pompoen",
+    "AH BANANEN": "AH Bananen",
+    "AH RAUWKOST": "AH Rauwkostsalade",
+    "PAPRIKA GEEL": "AH Paprika geel",
+    "SNOEPGROENTE": "AH Snoepgroente",
+    "MANDARIJNEN": "AH Mandarijnen",
+    "DRUIVEN": "AH Druiven",
+    "PETERSELIE": "AH Peterselie",
+    "KNOFLOOK": "AH Knoflook",
+    "KOMKOMMER": "AH Komkommer",
+    
+    # Zuivel
+    "AH HV MELK": "AH Halfvolle melk",
+    "ALPRO MILD&C": "Alpro Mild & Creamy yoghurt",
+    "AH KR MUESLI": "AH Krokante muesli",
+    "AH HAVERDRIN": "AH Haverdrink",
+    "BECEL LIGHT": "Becel Light margarine",
+    "AH KLEINTJE": "AH Kleintje vla",
+    
+    # Dranken
+    "AH EXC WIJN": "AH Excellent wijn",
+    "AH SAUV BL": "AH Sauvignon Blanc wijn",
+    "LEFFE BLOND": "Leffe Blond bier",
+    "LEFFE": "Leffe bier",
+    "DE LUNGO": "Nespresso De Lungo koffie",
+    "RED BULL": "Red Bull energy drink",
+    
+    # Brood & Bakkerij
+    "AH PISTOLETS": "AH Pistoletbroodjes",
+    "AH HAVERMOUT": "AH Havermout",
+    "AH TAARTDEEG": "AH Taartdeeg",
+    "MINI CRACKER": "AH Mini crackers",
+    
+    # Kaas
+    "AH GOUDSE": "AH Goudse kaas",
+    "GRUYERE": "AH Gruyère kaas",
+    "PECORINO": "Pecorino kaas",
+    
+    # Snacks & Zoetwaren
+    "AH RIJSTWAF": "AH Rijstwafels",
+    "CHEESE BITES": "AH Cheese bites",
+    "AH NOTEN": "AH Notenmix",
+    "PECANNOTEN": "AH Pecannoten",
+    "MUSKETBOMEN": "Musketbomen gebak",
+    "AH HAGELSLAG": "AH Hagelslag chocolade",
+    
+    # Vlees
+    "KIPGEHAKT": "AH Kipgehakt",
+    "AH PANCETTA": "AH Pancetta spek",
+    
+    # Sauzen & Specerijen  
+    "AH CHUTNEY": "AH Chutney saus",
+    "AH BOEMBOE": "AH Boemboe kruidenpasta",
+    
+    # Diepvries
+    "PICARD": "Picard diepvriesmaaltijd",
+}
+
+
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+
 def normalize_product_name(name: str) -> str:
     """
-    Normaliseer productnaam door BONUS suffix te verwijderen.
-    Dit zorgt ervoor dat 'Product X' en 'Product X BONUS' als hetzelfde product worden gezien.
+    Normaliseer productnaam:
+    - Verwijder BONUS suffix
+    - Trim whitespace
     """
-    # Strip whitespace
     name = name.strip()
     
-    # Verwijder " BONUS" suffix (case-insensitive)
     if name.upper().endswith(' BONUS'):
         name = name[:-6].strip()
     
     return name
 
 
-# Productcategorieën met uitgebreide keywords
-CATEGORY_KEYWORDS = {
-    "Zuivel & Eieren": [
-        # Basis zuivel
-        "melk", "yoghurt", "kaas", "boter", "room", "eieren", "ei ", "kwark",
-        "creme fraiche", "slagroom", "cottage", "mascarpone", "ricotta",
-        "zuivelspread", "kookzuivel", "sour cream", "griekse stijl",
-        # Kaassoorten en -types
-        "zaanlander", "geraspt", "plakken", "45+", "48+", "mozzarella",
-        "pecorino", "parmigiano", "feta", "zaanse hoeve", "burrata", "brie",
-        "geitenkaas", "camembert", "gorgonzola", "gruyere", "emmentaler",
-        "grana padano", "parmareggio", "manchego", "streeckgenoten", "schrama",
-        "belegen", "jong belegen", "extra belegen", "oud",
-        # Plantaardige zuivel (valt ook onder zuivel)
-        "alpro", "oatly", "mild & creamy",
-        # Zuivel extra voor kassabonnen
-        "margarine", "becel", "blue band", "vla", "kleintje vla", "custard",
-    ],
-    "Groente & Fruit": [
-        # Groenten
-        "tomaat", "tomaten", "appel", "peer", "banaan", "bananen", "aardappel", "sla",
-        "rauwkost", "rauwkostsalade",
-        "komkommer", "paprika", "wortel", "ui ", "uien", "knoflook", "champignon",
-        "broccoli", "bloemkool", "spinazie", "prei", "courgette", "aubergine",
-        "avocado", "mango", "ananas", "druiven", "sinaasappel", "citroen",
-        "limoen", "aardbei", "bosbes", "frambo", "elstar", "peen", "roerbak",
-        "snoepgroente", "trostomaten", "cherry", "roma", "julienne", "basilicum",
-        "groente", "fruit", "dadels", "rozijn", "chiquita", "bimi", "sjalot",
-        "gemengde salade", "salade erbij", "italiaanse mix", "salade mix",
-        "lunchsalade", "caesar", "pompoen",
-        # Verse kruiden (zijn groente)
-        "peterselie", "bieslook", "koriander", "dille", "munt", "tijm", "oregano",
-        "rozemarijn", "dragon", "kervel", "salie", "laurier", "bonenkruid",
-        # Extra groenten
-        "bosui", "lente-ui", "radijs", "rucola", "veldsla", "andijvie", "witlof",
-        "rode kool", "witte kool", "savooiekool", "spitskool", "boerenkool",
-        "snijbiet", "pak choi", "chinese kool", "ijsbergsla", "lollo", "radicchio",
-        "venkel", "knolselderij", "selderij", "pastinaak", "bieten", "mais",
-        "artisjok", "asperge", "zeekraal", "postelein", "shiitake", "oester",
-        "sperziebonen", "tuinerwten", "doperwten", "sugarsnaps", "peultjes",
-        "olijf", "taggiasca", "paddestoelen", "paddenstoel", "kappertjes",
-        # Fruit
-        "kersen", "pruimen", "abrikozen", "perzik", "nectarine", "melon", 
-        "watermeloen", "kiwi", "granaatappel", "passievrucht", "lychee",
-        "pitaya", "papaya", "kokosnoot", "vijgen", "grapefruit", "mandarijn",
-        "clementine", "conference", "gala", "jonagold", "golden", "granny",
-        # Schaal en verpakkingen
-        "schaal", "tros", "doos",
-        # Diepvries groenten
-        "krieltjes",
-    ],
-    "Vlees & Vis": [
-        # Vlees
-        "kip", "varken", "rund", "gehakt", "filet", "worst", "bacon", "ham", 
-        "kipfilet", "biefstuk", "schnitzel", "spek", "kalkoen", "lam", "scharrel", 
-        "kipdij", "rosbief", "haricot", "ossenhaas", "entrecote", "ribeye",
-        "slavink", "hamburger", "cordon bleu", "kipdrumstick", "kippenvleugel",
-        "spareribs", "pulled pork", "rookvlees", "pastrami", "salami", "chorizo",
-        "pancetta", "prosciutto", "carpaccio", "tartaar", "riblap", "sucadelapje",
-        "stoofvlees", "sticky chicken", "shoarma", "mortadella", "fuet", "besos",
-        # Vis en zeevruchten
-        "zalm", "tonijn", "garnaal", "vis", "kabeljauw", "schelvis", "tilapia",
-        "pangasius", "forel", "makreel", "haring", "kibbeling", "lekkerbek",
-        "visstick", "visfilet", "rivierkreeft", "kreeft", "krab", "mosselen",
-        "oesters", "inktvis", "calamares", "scampi", "coquilles",
-        "gerookte", "warmgerookte", "warmgerookt", "garnalenkroket", "tempura",
-        "garnalen rauw", "gepeld", "ansjovis", "princes",
-        # Plantaardige vlees alternatieven
-        "plantaardige balletjes", "plantaardige burger", "plantaardig gehakt",
-    ],
-    "Brood & Bakkerij": [
-        # Broodsoorten
-        "brood", "croissant", "stok", "pistolet", "bol", "baguette", "wrap",
-        "pita", "toast", "beschuit", "cracker", "wasa", "volkoren", "waldkorn",
-        "meergranen", "rogge", "spelt", "haver", "zuurdesem", "ciabatta",
-        "focaccia", "naan", "chapati", "tortilla", "flatbread", "knäckebröd",
-        "bagel", "muffin", "donut", "croffle", "pannenkoek", "poffertjes",
-        "pizzabodem", "rosti", "boulogne", "pains",
-        # Bakkerijproducten
-        "taart", "cake", "gebak", "appelflap", "saucijzenbroodje", "kaasbroodje",
-    ],
-    "Pasta, Rijst & Granen": [
-        # Pasta en noodles
-        "pasta", "penne", "spaghetti", "macaroni", "noodle", "noedel", "lasagne", "fusilli",
-        "tagliatelle", "fettuccine", "linguine", "rigatoni", "farfalle", "orzo",
-        "tortellini", "ravioli", "gnocchi", "cappelletti", "wok ", "udon",
-        "orecchiette", "de cecco", "barilla", "sfoglie",
-        # Rijst en granen  
-        "rijst", "couscous", "havermout", "muesli", "quinoa", "bulgur",
-        "polenta", "risotto", "basmati", "jasmine", "pandan", "arborio",
-        "sesamzaad", "sesam",
-        # Peulvruchten (logisch bij granen)
-        "kikkererwten", "zwarte bonen", "witte bonen", "bruine bonen", "linzen",
-        "sojabonen", "kapucijners", "spliterwten", "tuinbonen", "limabonen",
-        "kidneybonen", "cannellini", "borlotti", "lima bonen", "edamame",
-        "peulvruchtenmix", "peulvruchten",
-    ],
-    "Dranken": [
-        # Frisdrank en sappen
-        "water", "cola", "fris", "sap", "limonade", "ice tea", "tonic", "bitter lemon",
-        "cassis", "grenadine", "appelsap", "sinaasappelsap", "jus d'orange",
-        "pellegrino", "spa ", "evian", "perrier", "mineraalwater",
-        # Warme dranken
-        "thee", "koffie", "espresso", "cappuccino", "latte", "cacao", "chocomel",
-        "capsules", "pads", "lungo", "ristretto", "perla", "pukka",
-        # Alcoholisch
-        "bier", "wijn", "prosecco", "champagne", "cava", "abdij", "blond",
-        "leffe", "heineken", "grolsch", "amstel", "hertog",
-        # Energy en sport
-        "energy", "sportdrank", "vitamin well", "red bull", "monster", "energy drink",
-        # Plantaardige dranken
-        "haverdrink", "sojadrink", "amandeldrink", "rijstdrink", "kokosdrink",
-        "havermelk", "sojamelk", "amandelmelk",
-        # Wijn soorten
-        "sauvignon", "chardonnay", "merlot", "cabernet", "pinot", "rioja",
-        "chianti", "malbec", "shiraz", "riesling", "gewurztraminer", "moscato",
-        "blanc", "rouge", "rosé", "rose",
-    ],
-    "Sauzen & Specerijen": [
-        # Sauzen
-        "saus", "ketchup", "mayo", "mayonaise", "mosterd", "pesto", "dressing",
-        "vinaigrette", "aioli", "tzatziki", "hummus", "guacamole", "salsa",
-        "tapenade", "sambal", "sriracha", "tabasco", "sojasaus", "ketjap",
-        "teriyaki", "hoisin", "oestersaus", "vissaus", "worcestershire",
-        # Olie en azijn
-        "olie", "azijn", "balsamico", "olijfolie", "zonnebloemolie",
-        # Kruiden en specerijen
-        "peper", "zout", "kruiden", "curry", "paprika poeder", "kaneel",
-        "nootmuskaat", "komijn", "kurkuma", "gember", "kardamom", "kruidnagel",
-        "steranijs", "korianderzaad", "venkelzaad", "kerrie", "garam masala",
-        "ras el hanout", "za'atar", "sumak", "cayenne",
-        # Tomatenprodukten
-        "tomatenpuree", "puree", "passata", "pelati",
-        # Overige sauzen
-        "honing", "cuisine", "paturain", "bâton", "smaakmakermix", "jus",
-        "fond", "bouillon", "roux",
-    ],
-    "Snacks & Zoetwaren": [
-        # Chips en zout
-        "chips", "popcorn", "pretzels", "pinda", "borrel", "dipsaus", "zeewier",
-        "krokant", "kroketjes", "cheese bites", "kaaskoekje",
-        # Noten  
-        "nootje", "noten", "walnoot", "amandel", "cashew", "notenmix", 
-        "hazelnoot", "pistache", "macadamia", "pecannoot", "paranoot",
-        "terra noten", "terra walnoot", "terra amandel", "pijnboompitten",
-        "chiazaad", "zonnebloempitten", "pompoenpitten", "lijnzaad",
-        "kokossnippers", "kokosrasp",
-        # Chocolade en snoep
-        "chocola", "chocolade", "koek", "snoep", "drop", "kauwgom",
-        "tony", "reep", "biscuit", "sticks", "cookies", "bonbon",
-        "marshmallow", "lolly", "zuurtje", "winegums", "m&m",
-        "stroopwafel", "slofje", "slofjes", "musket", "lettertje", "macarons",
-        "paashaas", "gips", "knettersuiker", "tompoucen", "tompouce",
-        "nougatine", "nougat", "wafel",
-        # Gebak en dessert
-        "roomijs", "ijs ", "pavlova", "fruit mix", "mousse",
-        "tiramisu", "panna cotta", "cheesecake", "brownie",
-    ],
-    "Huishouden": [
-        # Schoonmaak
-        "wc", "schoon", "afwas", "wasmiddel", "waspoeder", "wasverzachter",
-        "doekje", "sponge", "bezem", "dweil", "allesreiniger", "bleek",
-        "ontkalker", "vaatwas", "glansspoelmiddel", "glasreiniger",
-        "glassex", "mullrose", "azijn", "schoonmaakazijn", "spray",
-        "pedaalemmerzak", "emmerzak",
-        # Papier en verpakking
-        "papier", "toiletpapier", "keukenrol", "servet", "tissue", "tempo",
-        "folie", "aluminiumfolie", "huishoudfolie", "bakpapier", "vershoudfolie",
-        "zak", "vuilnis", "afvalzak", "diepvrieszak",
-        # Keuken hulpmiddelen
-        "cocktail prikker", "prikker", "sateprikker", "bakje", "doeboek",
-        "toetenvegers",
-        # Overig huishouden
-        "batterij", "lamp", "kaars", "lucifer", "aansteker",
-    ],
-    "Persoonlijke Verzorging": [
-        # Haar
-        "shampoo", "conditioner", "haarlak", "gel", "mousse", "haarverf",
-        "magic retouch", "l'oréal", "loreal",
-        # Lichaam
-        "douche", "zeep", "douchegel", "bodylotion", "bodycrème", "deodorant",
-        "deo", "deoleen", "satin", "anti-transpirant", "creme", "lotion",
-        "hand soap", "handzeep", "hygiene", "care mint", "refill",
-        # Mondverzorging
-        "tandpasta", "tandenb", "mondwater", "flosdraad", "elmex", "oral",
-        # Scheren
-        "scheerm", "scheermes", "scheergel", "aftershave",
-        # Overig
-        "make", "mascara", "lippenstift", "nagellak", "wattenschijf", "wattenstaaf",
-        "maandverband", "tampon", "condoom",
-    ],
-    "Verpakking & Statiegeld": [
-        "statiegeld", "krat", "fles", "blik", "tasje", "verpakking", "emballage",
-    ],
-    "Bezorgkosten": [
-        "bezorg", "aflever", "service",
-    ],
-    "Abonnementen": [
-        "premium", "abonnement", "lidmaatschap", "bundel",
-    ],
-}
+def expand_abbreviation(name: str) -> str:
+    """
+    Expand abbreviated product names from kassabonnen.
+    Uses ABBREVIATION_MAP and tries partial matching.
+    """
+    name = name.strip()
+    
+    # Direct match in map
+    if name.upper() in ABBREVIATION_MAP:
+        return ABBREVIATION_MAP[name.upper()]
+    
+    # Try partial match
+    for abbrev, full in ABBREVIATION_MAP.items():
+        if name.upper().startswith(abbrev):
+            return full + name[len(abbrev):]
+    
+    return name
 
 
 def categorize_product(product_name: str) -> str:
-    """Categoriseer een product op basis van keywords met prioriteit"""
-    # Normaliseer eerst (BONUS strippen etc.)
-    normalized = normalize_product_name(product_name)
-    product_lower = normalized.lower()
+    """Categorize a product using the categorization service."""
+    try:
+        from services.categorization import get_categorization_service
+        service = get_categorization_service()
+        result = service.categorize(product_name)
+        return result['category']
+    except Exception:
+        return "Overig"
+
+
+def determine_subcategory(product_name: str, category: str) -> Optional[str]:
+    """Determine subcategory using the categorization service."""
+    try:
+        from services.categorization import get_categorization_service
+        service = get_categorization_service()
+        result = service.categorize(product_name)
+        return result.get('subcategory')
+    except Exception:
+        return None
+
+
+def guess_btw(product_name: str) -> str:
+    """
+    Guess BTW percentage based on product name.
+    - 21%: Alcohol, sodas, non-food
+    - 9%: Food, fresh produce
+    """
+    name_lower = product_name.lower()
     
-    # Speciale gevallen eerst (hogere prioriteit)
-    # Dit voorkomt conflicten tussen keywords
-    priority_rules = [
-        # Chips (inclusief alle types zoals lentil chips, tortilla chips) = Snacks
-        (["chips", "lentil chips", "tortilla chips", "nacho chips", "proper sea salt", "proper paprika", "proper sweet"], "Snacks & Zoetwaren"),
-        # Muesli/granola producten = Pasta, Rijst & Granen (ontbijtgranen)
-        (["muesli", "granola", "cruesli"], "Pasta, Rijst & Granen"),
-        # Azijn in schoonmaakcontext = Huishouden
-        (["schoonmaakazijn", "mullrose", "vanish", "vlekverwijderaar"], "Huishouden"),
-        # Pindakaas, siroop = Sauzen & Specerijen
-        (["pindakaas", "ahornsiroop", "maple", "harissa", "souq"], "Sauzen & Specerijen"),
-        # Haverdrink/plantaardige melk = Dranken
-        (["haverdrink", "sojadrink", "amandeldrink", "kokosdrink", "fever-tree", "ginger beer", "tonic"], "Dranken"),
-        # Chocolade producten = Snacks & Zoetwaren (niet dranken)
-        (["chocolade", "chocola", "chocoladefiguurtjes", "chocolade druppels"], "Snacks & Zoetwaren"),
-        # Cashewnoten, noten = Snacks & Zoetwaren
-        (["cashewnoten", "cashew", "noten"], "Snacks & Zoetwaren"),
-        # Bulgur, quinoa = Pasta, Rijst & Granen
-        (["bulgur", "quinoa", "couscous"], "Pasta, Rijst & Granen"),
-        # Vis producten met olie = Vlees & Vis
-        (["ansjovis", "tonijn", "sardine"], "Vlees & Vis"),
-        # Thee producten = Dranken
-        (["pukka", "thee", "chamomile", "night time", "after dinner"], "Dranken"),
-        # Kant-en-klaar vlees/vis producten
-        (["gyoza", "biltong", "knaks", "nduja", "cha siu"], "Vlees & Vis"),
-        # Kauwgom, mints, snoep
-        (["smint", "sportlife", "gums", "mints", "haribo", "liga", "pappadum", "vlokken", "venz"], "Snacks & Zoetwaren"),
-        # Persoonlijke verzorging merken
-        (["etos", "lenzen", "maandlenzen", "vloeistof", "azaron"], "Persoonlijke Verzorging"),
-        # Pizza producten
-        (["pizza", "pinsa", "pizzetta"], "Brood & Bakkerij"),
-        # Ramen noodles
-        (["ramen", "brilliant broth", "itsu"], "Pasta, Rijst & Granen"),
-        # Meer dranken
-        (["rivella", "fanta", "dr pepper", "hi-five", "charitea", "mojo", "maté", "fentimans", "elderflower", "coolbest"], "Dranken"),
-        # Meer snacks
-        (["mars", "ijsrepen", "klene", "red band", "stophoest", "ben & jerry", "smoeltjes", "suikerschelpen", "mentos", "gum"], "Snacks & Zoetwaren"),
-        # Meer huishouden
-        (["hg ", "schoonmaak", "kookplaatreiniger", "beeldschermreiniger", "sportkleding", "tafelkleed"], "Huishouden"),
-        # Meer sauzen
-        (["chili", "chilli", "go-tan", "mazzetti", "condimento"], "Sauzen & Specerijen"),
-        # Meer persoonlijke verzorging
-        (["always", "inlegkruisje", "dailies"], "Persoonlijke Verzorging"),
-        # Bakkerij/deeg producten
-        (["bladerdeeg", "filo", "easy bakery", "gist", "droge gist"], "Brood & Bakkerij"),
-        # Plantaardige vlees/vis
-        (["vivera", "plantaardige chicken", "tenders"], "Vlees & Vis"),
-        # Zuivel
-        (["eru", "balans", "oat drink", "natrue"], "Zuivel & Eieren"),
-        # Saus/curry kits
-        (["fairtrade original", "butter chicken", "curry kit"], "Sauzen & Specerijen"),
-        # Olie
-        (["coconut oil", "kokosolie", "biofan"], "Sauzen & Specerijen"),
-        # Bakpudding
-        (["kloppudding", "dr. oetker", "pudding"], "Snacks & Zoetwaren"),
+    btw_21_keywords = [
+        'leffe', 'wijn', 'bier', 'whisky', 'vodka', 'rum', 'gin',
+        'red bull', 'cola', 'fanta', 'sprite', 'pepsi', '7up',
+        'statiegeld', 'plastic', 'verpakking',
+        'shampoo', 'tandpasta', 'zeep', 'douche', 'deo',
+        'schoonmaak', 'afwasmiddel'
     ]
     
-    for keywords, category in priority_rules:
-        for keyword in keywords:
-            if keyword in product_lower:
-                return category
+    for keyword in btw_21_keywords:
+        # Match at word start, so 'cola' doesn't hit 'rucola' and 'gin' not 'aubergine'
+        if re.search(r"\b" + re.escape(keyword), name_lower):
+            return "21%"
     
-    # Normale keyword matching
-    for category, keywords in CATEGORY_KEYWORDS.items():
-        for keyword in keywords:
-            if keyword in product_lower:
-                return category
-    
-    return "Overig"
+    return "9%"
 
 
-# Subcategorie keywords per hoofdcategorie
-SUBCATEGORY_KEYWORDS = {
-    "Zuivel & Eieren": {
-        "Melk": ["melk", "halfvol", "volle melk", "magere melk", "lactosevrij"],
-        "Kaas": ["kaas", "goudse", "gruyere", "pecorino", "mozzarella", "feta", "brie", "camembert", "parmesan", "manchego"],
-        "Yoghurt & Kwark": ["yoghurt", "kwark", "griekse", "skyr", "cottage"],
-        "Boter & Margarine": ["boter", "margarine", "becel", "blue band", "roomboter"],
-        "Eieren": ["eieren", "ei ", "scharreleieren", "bio eieren"],
-        "Room & Vla": ["slagroom", "room", "vla", "custard", "creme fraiche"],
-        "Plantaardig": ["alpro", "oatly", "mild & creamy", "plantaardig"],
-    },
-    "Groente & Fruit": {
-        "Groente": ["tomaat", "komkommer", "paprika", "wortel", "broccoli", "spinazie", "sla", "kool", "prei", "courgette", "champignon", "ui", "knoflook"],
-        "Fruit": ["appel", "peer", "banaan", "druiven", "aardbei", "mango", "ananas", "sinaasappel", "citroen", "kiwi"],
-        "Kruiden": ["basilicum", "peterselie", "bieslook", "koriander", "munt", "dille", "rozemarijn", "tijm"],
-        "Peulvruchten": ["bonen", "kikkererwten", "linzen", "erwten", "peulvruchten"],
-        "Salades": ["salade", "sla", "rucola", "rauwkost"],
-        "Aardappelen": ["aardappel", "krieltjes", "puree", "friet"],
-    },
-    "Vlees & Vis": {
-        "Kip": ["kip", "kipfilet", "kipgehakt", "kipdij", "drumstick", "vleugel"],
-        "Rund & Varken": ["rund", "varken", "gehakt", "biefstuk", "schnitzel", "sparerib", "bacon", "spek"],
-        "Vis": ["zalm", "tonijn", "kabeljauw", "garnaal", "vis", "forel", "makreel"],
-        "Vleeswaren": ["ham", "salami", "filet americain", "rosbief", "chorizo", "pancetta", "prosciutto"],
-        "Vegetarisch & Vegan": ["vegetarisch", "vegan", "plantaardig", "tofu", "tempeh", "vivera"],
-        "Wild & Gevogelte": ["kalkoen", "eend", "konijn", "wild"],
-    },
-    "Dranken": {
-        "Koffie": ["koffie", "espresso", "lungo", "nespresso", "cappuccino"],
-        "Thee": ["thee", "tea", "pukka", "pickwick", "lipton"],
-        "Frisdrank": ["cola", "fanta", "sprite", "pepsi", "sinas", "frisdrank", "dr pepper"],
-        "Sap & Smoothies": ["sap", "jus", "smoothie", "appelsap", "sinaasappelsap"],
-        "Bier": ["bier", "leffe", "heineken", "amstel", "jupiler", "hertog jan", "ipa", "pils"],
-        "Wijn": ["wijn", "sauvignon", "chardonnay", "merlot", "pinot", "prosecco", "champagne"],
-        "Sterke Drank": ["whisky", "vodka", "rum", "gin", "jenever", "likeur"],
-        "Water": ["water", "spa", "chaudfontaine", "bar le duc"],
-        "Sportdranken": ["red bull", "energy", "sportdrank", "aquarius", "aa drink"],
-        "Plantaardige Dranken": ["haverdrink", "sojadrink", "amandeldrink", "kokosdrink"],
-    },
-    "Snacks & Zoetwaren": {
-        "Chips & Noten": ["chips", "noten", "pinda", "cashew", "pistache", "borrelnoot"],
-        "Snoep": ["snoep", "drop", "winegum", "lolly", "haribo", "smint", "mentos"],
-        "Chocolade": ["chocola", "bonbon", "praline", "reep", "tony", "milka"],
-        "Koekjes": ["koek", "biscuit", "speculaas", "stroopwafel", "bastogne"],
-        "Ijs": ["ijs", "magnum", "cornetto", "ben & jerry"],
-    },
-    "Brood & Bakkerij": {
-        "Brood": ["brood", "boterham", "volkoren", "wit brood", "meergranen", "pistolet"],
-        "Gebak & Taart": ["taart", "gebak", "croissant", "appeltaart", "tompouce"],
-        "Ontbijtproducten": ["muesli", "havermout", "cornflakes", "cruesli", "granola"],
-        "Crackers & Toast": ["cracker", "toast", "beschuit", "knäckebröd"],
-    },
-    "Sauzen & Specerijen": {
-        "Sauzen": ["saus", "mayonaise", "ketchup", "mosterd", "aioli"],
-        "Kruiden & Specerijen": ["kruiden", "peper", "zout", "paprikapoeder", "komijn", "kerrie"],
-        "Olie & Azijn": ["olie", "olijfolie", "azijn", "balsamico"],
-        "Pasta Sauzen": ["pesto", "pastasaus", "bolognese", "arrabiata"],
-    },
-}
-
-
-def determine_subcategory(product_name: str, main_category: str) -> str:
-    """Bepaal de subcategorie van een product binnen een hoofdcategorie"""
-    if main_category not in SUBCATEGORY_KEYWORDS:
-        return None
-    
-    product_lower = product_name.lower()
-    subcats = SUBCATEGORY_KEYWORDS[main_category]
-    
-    for subcat_name, keywords in subcats.items():
-        for keyword in keywords:
-            if keyword in product_lower:
-                return subcat_name
-    
-    return None
-
-
-def categorize_product_full(product_name: str) -> Dict:
-    """Categoriseer een product met hoofdcategorie en subcategorie"""
-    category = categorize_product(product_name)
-    subcategory = determine_subcategory(product_name, category)
-    
-    return {
-        "category": category,
-        "subcategory": subcategory
-    }
-
-
-def parse_dutch_date(date_str: str) -> str:
-    """Parse a Dutch date string to ISO format"""
+def parse_dutch_date(date_str: str) -> Optional[datetime]:
+    """Parse Dutch date string (e.g., '15 januari 2024')"""
     dutch_months = {
         "januari": 1, "februari": 2, "maart": 3, "april": 4,
         "mei": 5, "juni": 6, "juli": 7, "augustus": 8,
         "september": 9, "oktober": 10, "november": 11, "december": 12
     }
     
-    parts = date_str.split()
-    if len(parts) == 3:
-        day = int(parts[0])
-        month = dutch_months.get(parts[1].lower(), 1)
-        year = int(parts[2])
-        return datetime(year, month, day).strftime("%Y-%m-%d")
+    try:
+        parts = date_str.split()
+        if len(parts) == 3:
+            day = int(parts[0])
+            month = dutch_months.get(parts[1].lower(), 1)
+            year = int(parts[2])
+            return datetime(year, month, day)
+    except:
+        pass
     
     return None
 
 
-def extract_products_from_text(text: str) -> List[Dict]:
-    """Extract products from invoice text using a universal pattern"""
+# ============================================================
+# PDF TYPE DETECTION
+# ============================================================
+
+def detect_pdf_type(text: str) -> str:
+    """
+    Detect the type of PDF based on content.
+    Returns: 'online_invoice', 'kassabon', or 'unknown'
+    """
+    # Online invoices have these markers
+    if 'Factuurnummer' in text and 'Debiteurnummer' in text:
+        return 'online_invoice'
+    
+    # Kassabonnen have these markers
+    if 'BONUSKAART' in text or 'OMSCHRIJVING' in text:
+        return 'kassabon'
+    
+    # Additional check: kassabon format has 4-digit store number at top
+    if re.match(r'^\d{4}\s*$', text.split('\n')[0].strip()):
+        return 'kassabon'
+    
+    return 'unknown'
+
+
+# ============================================================
+# ONLINE INVOICE PARSER
+# ============================================================
+
+def parse_online_invoice(pdf_path: str) -> Optional[Dict]:
+    """
+    Parse an Albert Heijn online invoice PDF.
+    Format: Full product names with BTW details.
+    """
+    file_hash = calculate_file_hash(pdf_path)
+    
+    result = {
+        'file_hash': file_hash,
+        'filename': os.path.basename(pdf_path),
+        'invoice_number': None,
+        'invoice_date': None,
+        'total_amount': 0.0,
+        'total_savings': 0.0,
+        'products': [],
+        'raw_text': '',
+        'source_type': 'ah_online',
+    }
+    
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            raw_text = ""
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text:
+                    raw_text += text + "\n"
+            
+            result['raw_text'] = raw_text
+            
+            # Extract invoice details
+            date_match = re.search(r"Datum\s+(\d{1,2}\s+\w+\s+\d{4})", raw_text)
+            if date_match:
+                result['invoice_date'] = parse_dutch_date(date_match.group(1))
+            
+            inv_match = re.search(r"Factuurnummer\s+(\S+)", raw_text)
+            if inv_match:
+                result['invoice_number'] = inv_match.group(1)
+            
+            total_match = re.search(r"Totaal inclusief btw\s+([\d,]+)", raw_text)
+            if total_match:
+                result['total_amount'] = float(total_match.group(1).replace(",", "."))
+            
+            savings_match = re.search(r"Uw voordeel\s+([\d,]+)", raw_text)
+            if savings_match:
+                result['total_savings'] = float(savings_match.group(1).replace(",", "."))
+            
+            result['products'] = extract_products_from_online_invoice(raw_text)
+            
+    except Exception as e:
+        print(f"Error parsing online invoice {pdf_path}: {e}")
+        return None
+    
+    return result
+
+
+def extract_products_from_online_invoice(text: str) -> List[Dict]:
+    """
+    Extract products from online invoice text.
+    Format: PRODUCT NAME    QTY  BTW%   EXCL    BTW    INCL
+    """
     products = []
     seen_products = set()
     
-    # Generiek pattern dat ALLE productregels vangt:
-    # [Productnaam] [Aantal] [9%|21%|Geen] [Excl btw] [Btw-bedrag] [Incl btw]
-    # De productnaam begint met een hoofdletter en bevat letters, spaties, cijfers, etc.
-    # Het eindigt wanneer we het patroon: [getal] [btw%] [bedrag] [bedrag] [bedrag] vinden
-    
+    # Pattern for product lines in AH invoices
     product_pattern = re.compile(
         r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)\s+(\d+)\s+(9%|21%|Geen)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$",
         re.MULTILINE
     )
     
-    # Zoek alle matches
+    skip_patterns = [
+        "statiegeld", "retour", "klapkrat", "bezorgkosten", "verpakkingsmateriaal",
+        "plastic verpakking", "koopzegels", "pagina ", "datum ", "factuurnummer",
+        "debiteurnummer", "bestelling", "afleverdatum", "bezorgadres", "totaal",
+        "boodschappen", "alle bedragen", "vragen over"
+    ]
+    
     for match in product_pattern.finditer(text):
         original_name = match.group(1).strip()
         quantity = int(match.group(2))
         btw = match.group(3)
         price_incl = float(match.group(6).replace(",", "."))
         
-        # Skip ongewenste regels
-        skip_patterns = [
-            "statiegeld", "retour", "klapkrat", "bezorgkosten", "verpakkingsmateriaal",
-            "plastic verpakking", "koopzegels", "pagina ", "datum ", "factuurnummer",
-            "debiteurnummer", "bestelling", "afleverdatum", "bezorgadres", "totaal",
-            "boodschappen", "alle bedragen", "vragen over"
-        ]
-        
         name_lower = original_name.lower()
         if any(skip in name_lower for skip in skip_patterns):
             continue
         
-        # Skip regels die te kort zijn (waarschijnlijk geen echte producten)
-        if len(original_name) < 3:
-            continue
-            
-        # Skip regels met alleen cijfers
-        if original_name.replace(" ", "").isdigit():
+        if len(original_name) < 3 or original_name.replace(" ", "").isdigit():
             continue
         
-        # Normaliseer de productnaam (BONUS strippen etc.)
         display_name = normalize_product_name(original_name)
         
-        # Skip duplicates (gebaseerd op genormaliseerde naam + prijs)
         product_key = f"{display_name}_{quantity}_{price_incl}"
         if product_key in seen_products:
             continue
         seen_products.add(product_key)
         
-        category = categorize_product(original_name)
-        subcategory = determine_subcategory(original_name, category)
+        category = categorize_product(display_name)
+        subcategory = determine_subcategory(display_name, category)
         
         products.append({
-            "name": display_name,
-            "original_name_raw": original_name,
-            "quantity": quantity,
-            "btw": btw,
-            "price": price_incl,
-            "category": category,
-            "subcategory": subcategory
+            'name': display_name,
+            'quantity': quantity,
+            'btw': btw,
+            'price': price_incl,
+            'category': category,
+            'subcategory': subcategory,
         })
     
     return products
 
 
-def parse_invoice(pdf_path: str) -> Tuple[Dict, List[Dict], str]:
+# ============================================================
+# KASSABON (STORE RECEIPT) PARSER
+# ============================================================
+
+def parse_kassabon(pdf_path: str) -> Optional[Dict]:
     """
-    Parse een AH factuur PDF en extract alle relevante data
-    Returns: (invoice_data, products, raw_text)
+    Parse an Albert Heijn kassabon (store receipt) PDF.
+    Format: Abbreviated product names with simpler price structure.
     """
+    file_hash = calculate_file_hash(pdf_path)
+    
     result = {
-        "filename": os.path.basename(pdf_path),
-        "file_hash": calculate_file_hash(pdf_path),
-        "date": None,
-        "invoice_number": None,
-        "total": 0,
-        "savings": 0
+        'file_hash': file_hash,
+        'filename': os.path.basename(pdf_path),
+        'invoice_number': None,
+        'invoice_date': None,
+        'total_amount': 0.0,
+        'total_savings': 0.0,
+        'products': [],
+        'raw_text': '',
+        'source_type': 'ah_kassabon',
     }
     
-    products = []
-    raw_text = ""
+    all_text = []
     
     try:
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
-                    raw_text += text + "\n"
-            
-            # Extract datum
-            date_match = re.search(r"Datum\s+(\d{1,2}\s+\w+\s+\d{4})", raw_text)
-            if date_match:
-                result["date"] = parse_dutch_date(date_match.group(1))
-            
-            # Extract factuurnummer
-            inv_match = re.search(r"Factuurnummer\s+(\S+)", raw_text)
-            if inv_match:
-                result["invoice_number"] = inv_match.group(1)
-            
-            # Extract totaal
-            total_match = re.search(r"Totaal inclusief btw\s+([\d,]+)", raw_text)
-            if total_match:
-                result["total"] = float(total_match.group(1).replace(",", "."))
-            
-            # Extract korting
-            savings_match = re.search(r"Uw voordeel\s+([\d,]+)", raw_text)
-            if savings_match:
-                result["savings"] = float(savings_match.group(1).replace(",", "."))
-            
-            # Extract producten
-            products = extract_products_from_text(raw_text)
-    
-    except Exception as e:
-        print(f"Error parsing {pdf_path}: {e}")
-    
-    return result, products, raw_text
-
-
-def import_invoice(pdf_path: str, force: bool = False) -> Dict:
-    """
-    Import a single invoice into the database
-    Returns status dict with success/skip/error info
-    """
-    result = {
-        "filename": os.path.basename(pdf_path),
-        "status": "unknown",
-        "message": "",
-        "invoice_id": None,
-        "products_count": 0
-    }
-    
-    try:
-        # Check for duplicate
-        file_hash = calculate_file_hash(pdf_path)
+                    all_text.append(text)
         
-        if invoice_exists(file_hash) and not force:
-            result["status"] = "skipped"
-            result["message"] = "Invoice already exists in database"
-            return result
+        raw_text = "\n".join(all_text)
+        result['raw_text'] = raw_text
         
-        # Parse the PDF
-        invoice_data, products, raw_text = parse_invoice(pdf_path)
-        invoice_data["raw_text"] = raw_text
+        # Extract store number (bonnummer - 4 digits at top)
+        bon_match = re.search(r'^(\d{4})\s*$', raw_text, re.MULTILINE)
+        if bon_match:
+            result['invoice_number'] = f"BON-{bon_match.group(1)}"
         
-        if not invoice_data["date"]:
-            result["status"] = "error"
-            result["message"] = "Could not extract date from invoice"
-            return result
+        # Extract date (format: 14:26 20-12-2025 or dd-mm-yyyy)
+        date_match = re.search(r'(\d{1,2}:\d{2}\s+)?(\d{1,2})-(\d{1,2})-(\d{4})', raw_text)
+        if date_match:
+            day, month, year = date_match.group(2), date_match.group(3), date_match.group(4)
+            result['invoice_date'] = datetime(int(year), int(month), int(day))
         
-        # Save to database
-        invoice_id = save_invoice(invoice_data)
-        save_products(invoice_id, products)
+        # Extract total amount
+        total_match = re.search(r'TOTAAL\s+(\d+[,\.]\d{2})', raw_text)
+        if total_match:
+            result['total_amount'] = float(total_match.group(1).replace(',', '.'))
         
-        result["status"] = "success"
-        result["message"] = f"Imported {len(products)} products"
-        result["invoice_id"] = invoice_id
-        result["products_count"] = len(products)
-        result["date"] = invoice_data["date"]
-        result["total"] = invoice_data["total"]
+        # Extract savings
+        voordeel_match = re.search(r'UW VOORDEEL\s+(\d+[,\.]\d{2})', raw_text)
+        if voordeel_match:
+            result['total_savings'] = float(voordeel_match.group(1).replace(',', '.'))
+        
+        result['products'] = extract_products_from_kassabon(raw_text)
         
     except Exception as e:
-        result["status"] = "error"
-        result["message"] = str(e)
+        print(f"Error parsing kassabon {pdf_path}: {e}")
+        return None
     
     return result
 
 
-def import_all_invoices(directory: str = "data/invoices", force: bool = False) -> Dict:
+def extract_products_from_kassabon(text: str) -> List[Dict]:
     """
-    Import all invoices from a directory
-    Returns summary of import results
-    """
-    invoice_dir = Path(directory)
+    Extract products from kassabon text.
     
-    if not invoice_dir.exists():
+    Formats:
+    1. Normal:     1 PAPRIKA GEEL 1,29
+    2. Multi:      2 LEFFE BLOND 1,11 2,22 B
+    3. Weight:     0.962KG TROSTOMAAT 2,38 2,29
+    4. Deposit:    +STATIEGELD 0,30
+    """
+    products = []
+    lines = text.split('\n')
+    
+    # Stop at these markers
+    stop_markers = ['SUBTOTAAL', 'BONUS ', 'UW VOORDEEL', 'TOTAAL', 'BETAALD', 'SPAARACTIES', 'KOOPZEGELS']
+    
+    for line in lines:
+        line = line.strip()
+        
+        # Skip empty lines and headers
+        if not line or 'OMSCHRIJVING' in line or 'BONUSKAART' in line or 'AIRMILES' in line:
+            continue
+        
+        # Stop at markers
+        should_stop = False
+        for marker in stop_markers:
+            if marker in line.upper():
+                should_stop = True
+                break
+        if should_stop:
+            break
+        
+        # Skip deposit lines
+        if line.startswith('+STATIEGELD') or 'STATIEGELD' in line.upper():
+            continue
+        
+        product = parse_kassabon_line(line)
+        if product:
+            products.append(product)
+    
+    return products
+
+
+def parse_kassabon_line(line: str) -> Optional[Dict]:
+    """Parse a single product line from a kassabon."""
+    
+    # Pattern 1: Weight product (e.g., "0.962KG TROSTOMAAT 2,38 2,29")
+    weight_match = re.match(
+        r'^(\d+[.,]\d+)KG\s+(.+?)\s+(\d+[,\.]\d{2})\s+(\d+[,\.]\d{2})(?:\s+B)?$',
+        line, re.IGNORECASE
+    )
+    if weight_match:
+        weight = float(weight_match.group(1).replace(',', '.'))
+        name = weight_match.group(2).strip()
+        total_price = float(weight_match.group(4).replace(',', '.'))
+        
+        name = expand_abbreviation(name)
+        name = normalize_product_name(name)
+        
+        category = categorize_product(name)
+        subcategory = determine_subcategory(name, category)
+        
         return {
-            "status": "error",
-            "message": f"Directory {directory} does not exist",
-            "results": []
+            "name": f"{name} ({weight:.3f}kg)",
+            "quantity": 1,
+            "price": total_price,
+            "btw": "9%",
+            "category": category,
+            "subcategory": subcategory,
+            "weight_kg": weight
         }
     
-    results = []
-    success_count = 0
-    skip_count = 0
-    error_count = 0
-    
-    for pdf_file in sorted(invoice_dir.glob("*.pdf")):
-        result = import_invoice(str(pdf_file), force=force)
-        results.append(result)
+    # Pattern 2: Multiple items (e.g., "2 LEFFE BLOND 1,11 2,22 B")
+    multi_match = re.match(
+        r'^(\d+)\s+(.+?)\s+(\d+[,\.]\d{2})\s+(\d+[,\.]\d{2})(?:\s+B)?$',
+        line
+    )
+    if multi_match:
+        quantity = int(multi_match.group(1))
+        name = multi_match.group(2).strip()
+        total_price = float(multi_match.group(4).replace(',', '.'))
         
-        if result["status"] == "success":
-            success_count += 1
-        elif result["status"] == "skipped":
-            skip_count += 1
-        else:
-            error_count += 1
+        name = re.sub(r'\s+B$', '', name)
+        name = expand_abbreviation(name)
+        name = normalize_product_name(name)
+        
+        btw = guess_btw(name)
+        category = categorize_product(name)
+        subcategory = determine_subcategory(name, category)
+        
+        return {
+            "name": name,
+            "quantity": quantity,
+            "price": total_price,
+            "btw": btw,
+            "category": category,
+            "subcategory": subcategory
+        }
     
+    # Pattern 3: Single item (e.g., "1 PAPRIKA GEEL 1,29")
+    single_match = re.match(
+        r'^(\d+)\s+(.+?)\s+(\d+[,\.]\d{2})(?:\s+B)?$',
+        line
+    )
+    if single_match:
+        quantity = int(single_match.group(1))
+        name = single_match.group(2).strip()
+        price = float(single_match.group(3).replace(',', '.'))
+        
+        name = re.sub(r'\s+B$', '', name)
+        name = expand_abbreviation(name)
+        name = normalize_product_name(name)
+        
+        btw = guess_btw(name)
+        category = categorize_product(name)
+        subcategory = determine_subcategory(name, category)
+        
+        return {
+            "name": name,
+            "quantity": quantity,
+            "price": price,
+            "btw": btw,
+            "category": category,
+            "subcategory": subcategory
+        }
+    
+    return None
+
+
+# ============================================================
+# UNIFIED IMPORT FUNCTIONS
+# ============================================================
+
+def parse_pdf(pdf_path: str) -> Optional[Dict]:
+    """
+    Parse any AH PDF (online invoice or kassabon).
+    Auto-detects format and uses appropriate parser.
+    """
+    try:
+        # Read first page to detect type
+        with pdfplumber.open(pdf_path) as pdf:
+            if not pdf.pages:
+                return None
+            text = pdf.pages[0].extract_text() or ""
+        
+        pdf_type = detect_pdf_type(text)
+        
+        if pdf_type == 'online_invoice':
+            return parse_online_invoice(pdf_path)
+        elif pdf_type == 'kassabon':
+            return parse_kassabon(pdf_path)
+        else:
+            # Try both parsers, use the one that finds products
+            online_result = parse_online_invoice(pdf_path)
+            if online_result and len(online_result.get('products', [])) > 0:
+                return online_result
+            
+            kassabon_result = parse_kassabon(pdf_path)
+            if kassabon_result and len(kassabon_result.get('products', [])) > 0:
+                return kassabon_result
+            
+            # Return whichever has a valid date
+            if online_result and online_result.get('invoice_date'):
+                return online_result
+            if kassabon_result and kassabon_result.get('invoice_date'):
+                return kassabon_result
+            
+            print(f"Unknown PDF format: {pdf_path}")
+            return None
+            
+    except Exception as e:
+        print(f"Error parsing {pdf_path}: {e}")
+        return None
+
+
+def parse_receipt_photo(image_path: str) -> Optional[Dict]:
+    """
+    Parse a photo of a PLUS kassabon (HEIC/JPG/PNG) into the same dict shape as parse_pdf.
+    """
+    from sources.plus_receipt import PlusReceiptSource, build_vocabulary, correct_ocr_name, display_name
+
+    try:
+        receipt = PlusReceiptSource().parse(image_path)
+    except Exception as e:
+        print(f"Error parsing photo {image_path}: {e}")
+        return None
+
+    # Repair OCR slips against names already in the database, and reuse an existing
+    # spelling when a name only differs in spacing ("KAASVL INDERS" / "KAASVLINDERS")
+    known_names = get_all_product_names()
+    vocab = build_vocabulary(known_names)
+    by_compact = {}
+    for name in known_names:
+        by_compact.setdefault(re.sub(r"[^A-Z0-9]", "", name.upper()), name)
+
+    products = []
+    for p in receipt.products:
+        raw = correct_ocr_name(p.original_name_raw or p.name, vocab)
+        known = by_compact.get(re.sub(r"[^A-Z0-9]", "", raw))
+        if known and known.isupper():
+            raw = known
+        name = display_name(raw)
+        category = categorize_product(name)
+        products.append({
+            'name': name,
+            'original_name': raw,
+            'quantity': p.quantity,
+            'price': p.price,
+            'btw': guess_btw(name),
+            'category': category,
+            'subcategory': determine_subcategory(name, category),
+        })
+
     return {
-        "status": "completed",
-        "total": len(results),
-        "success": success_count,
-        "skipped": skip_count,
-        "errors": error_count,
-        "results": results
+        'file_hash': receipt.file_hash,
+        'filename': receipt.filename,
+        'invoice_number': receipt.invoice_number,
+        'invoice_date': receipt.date,
+        'total_amount': receipt.total_amount,
+        'total_savings': receipt.total_savings,
+        'products': products,
+        'raw_text': receipt.raw_text,
+        'source_type': receipt.source_type,
+        'source_metadata': receipt.source_metadata,
+        'parse_quality_score': receipt.parse_quality_score,
+        'parse_notes': receipt.parse_notes,
     }
 
 
-def add_keyword_to_category(category: str, keyword: str) -> Dict:
+def import_invoice(filepath: str, force: bool = False) -> Dict:
     """
-    Add a keyword to a category.
-    Note: This modifies the in-memory CATEGORY_KEYWORDS but doesn't persist to file.
+    Import a single invoice/receipt into the database.
+    Returns status dict with success/error info.
     """
-    global CATEGORY_KEYWORDS
+    from sources.plus_receipt import IMAGE_EXTENSIONS
+
+    file_hash = calculate_file_hash(filepath)
+
+    # Check if already exists (unless force)
+    if not force and invoice_exists(file_hash):
+        return {'status': 'skipped', 'reason': 'Already exists'}
+
+    if Path(filepath).suffix.lower() in IMAGE_EXTENSIONS:
+        result = parse_receipt_photo(filepath)
+    else:
+        result = parse_pdf(filepath)
     
-    keyword = keyword.lower().strip()
-    if not keyword:
-        return {"success": False, "error": "Keyword cannot be empty"}
+    if result is None:
+        return {'status': 'error', 'reason': 'Parse failed'}
     
-    if category not in CATEGORY_KEYWORDS:
-        return {"success": False, "error": f"Category '{category}' not found"}
+    if not result.get('invoice_date'):
+        return {'status': 'error', 'reason': 'No date found'}
     
-    if keyword in CATEGORY_KEYWORDS[category]:
-        return {"success": False, "error": f"Keyword '{keyword}' already exists in {category}"}
-    
-    CATEGORY_KEYWORDS[category].append(keyword)
-    return {"success": True}
+    try:
+        invoice_id = save_invoice(result)
+        
+        products_to_save = []
+        for product in result['products']:
+            products_to_save.append({
+                'original_name': product.get('original_name', product['name']),
+                'display_name': product['name'],
+                'quantity': product['quantity'],
+                'price': product['price'],
+                'btw_percentage': product.get('btw', ''),
+                'auto_category': product['category'],
+                'auto_subcategory': product.get('subcategory'),
+            })
+        
+        save_products(invoice_id, products_to_save)
+        
+        return {
+            'status': 'success',
+            'invoice_id': invoice_id,
+            'products_count': len(products_to_save),
+            'total_amount': result['total_amount'],
+            'source_type': result.get('source_type', 'unknown'),
+            'parse_quality_score': result.get('parse_quality_score'),
+            'parse_notes': result.get('parse_notes'),
+        }
+        
+    except Exception as e:
+        return {'status': 'error', 'reason': str(e)}
 
 
-def remove_keyword_from_category(category: str, keyword: str) -> Dict:
+def import_all_invoices(directory: str = "data/invoices", force: bool = False) -> Dict:
     """
-    Remove a keyword from a category.
-    Note: This modifies the in-memory CATEGORY_KEYWORDS but doesn't persist to file.
+    Import all PDF invoices and receipt photos from a directory and its subfolders
+    (e.g. data/invoices/plus/ for photos of PLUS kassabonnen).
+    Returns summary of import results.
     """
-    global CATEGORY_KEYWORDS
+    from sources.plus_receipt import IMAGE_EXTENSIONS
+
+    results = {
+        'success': 0,
+        'skipped': 0,
+        'errors': 0,
+        'needs_review': 0,
+        'details': [],
+        'total_amount': 0.0,
+    }
+
+    dir_path = Path(directory)
+    if not dir_path.exists():
+        print(f"Directory not found: {directory}")
+        return results
+
+    pdf_files = sorted(p for p in dir_path.rglob("*")
+                       if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS | {'.pdf'})
+    total_files = len(pdf_files)
+
+    for i, pdf_file in enumerate(pdf_files, 1):
+        result = import_invoice(str(pdf_file), force=force)
+
+        if result['status'] == 'success':
+            results['success'] += 1
+            results['total_amount'] += result.get('total_amount', 0)
+            print(f"✓ [{i}/{total_files}] {pdf_file.name}: {result['products_count']} products, €{result.get('total_amount', 0):.2f}")
+            if result.get('parse_quality_score') is not None and result['parse_quality_score'] < 1:
+                # Imported, but the totals didn't add up - surface it instead of hiding it
+                results['needs_review'] += 1
+                results['details'].append({'file': pdf_file.name, 'warning': result.get('parse_notes')})
+                print(f"  ⚠ {result.get('parse_notes')}")
+        elif result['status'] == 'skipped':
+            results['skipped'] += 1
+            print(f"○ [{i}/{total_files}] {pdf_file.name}: Skipped (already exists)")
+        else:
+            results['errors'] += 1
+            results['details'].append({
+                'file': pdf_file.name,
+                'error': result.get('reason', 'Unknown error')
+            })
+            print(f"✗ [{i}/{total_files}] {pdf_file.name}: {result.get('reason', 'Error')}")
     
-    keyword = keyword.lower().strip()
+    print(f"\n=== Import Summary ===")
+    print(f"Success: {results['success']}")
+    print(f"Skipped: {results['skipped']}")
+    print(f"Errors: {results['errors']}")
+    print(f"Needs review: {results['needs_review']}")
+    print(f"Total imported: €{results['total_amount']:.2f}")
     
-    if category not in CATEGORY_KEYWORDS:
-        return {"success": False, "error": f"Category '{category}' not found"}
-    
-    if keyword not in CATEGORY_KEYWORDS[category]:
-        return {"success": False, "error": f"Keyword '{keyword}' not found in {category}"}
-    
-    CATEGORY_KEYWORDS[category].remove(keyword)
-    return {"success": True}
+    return results
 
 
-def get_all_keywords() -> Dict[str, List[str]]:
-    """Get all category keywords"""
-    return CATEGORY_KEYWORDS.copy()
+# For backwards compatibility with receipt_parser imports
+def extract_products_from_text(text: str) -> List[Dict]:
+    """Legacy function - use extract_products_from_online_invoice instead."""
+    return extract_products_from_online_invoice(text)
 
 
 if __name__ == "__main__":
-    # Test parsing
-    from database import init_database
+    # Test the unified parser
+    import sys
     
-    init_database()
-    
-    results = import_all_invoices()
-    print(f"Import completed:")
-    print(f"  Success: {results['success']}")
-    print(f"  Skipped: {results['skipped']}")
-    print(f"  Errors: {results['errors']}")
-
+    if len(sys.argv) > 1:
+        pdf_path = sys.argv[1]
+        result = parse_pdf(pdf_path)
+        if result:
+            print(f"\n=== {result['filename']} ===")
+            print(f"Type: {result.get('source_type', 'unknown')}")
+            print(f"Date: {result.get('invoice_date')}")
+            print(f"Total: €{result.get('total_amount', 0):.2f}")
+            print(f"Savings: €{result.get('total_savings', 0):.2f}")
+            print(f"Products: {len(result.get('products', []))}")
+            print("\nFirst 10 products:")
+            for p in result.get('products', [])[:10]:
+                print(f"  - {p['name']}: €{p['price']:.2f} [{p['category']}]")
+        else:
+            print("Failed to parse PDF")
+    else:
+        # Run import
+        print("Running import from data/invoices...")
+        results = import_all_invoices("data/invoices", force=False)

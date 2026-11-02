@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="nl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Factuur Details - Appestat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --ah-blue: #00ADE6;
@@ -28,21 +30,25 @@
             --body-bg: var(--gray-50);
             --card-bg: var(--white);
             --border-color: var(--gray-200);
-            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --radius: 8px;
             --radius-lg: 12px;
         }
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Albert Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--body-bg);
             color: var(--gray-900);
             line-height: 1.5;
         }
-        
+
         .ah-header {
             background: var(--ah-blue);
             color: var(--white);
@@ -51,34 +57,34 @@
             z-index: 100;
             box-shadow: var(--shadow-md);
         }
-        
+
         .ah-header-top {
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             font-size: 0.75rem;
             padding: 0.25rem 0;
         }
-        
+
         .ah-header-top .container {
             display: flex;
             justify-content: space-between;
         }
-        
+
         .ah-header-main {
             padding: 0.75rem 0;
         }
-        
+
         .ah-header-main .container {
             display: flex;
             align-items: center;
             gap: 2rem;
         }
-        
+
         .container {
             max-width: 1280px;
             margin: 0 auto;
             padding: 0 1rem;
         }
-        
+
         .ah-logo {
             display: flex;
             align-items: center;
@@ -88,7 +94,7 @@
             text-decoration: none;
             color: var(--white);
         }
-        
+
         .ah-logo-icon {
             width: 40px;
             height: 40px;
@@ -100,12 +106,12 @@
             color: var(--ah-blue);
             font-weight: 700;
         }
-        
+
         .ah-nav {
             display: flex;
             gap: 0.5rem;
         }
-        
+
         .ah-nav a {
             color: var(--white);
             text-decoration: none;
@@ -114,14 +120,16 @@
             font-weight: 500;
             transition: background 0.2s;
         }
-        
+
         .ah-nav a:hover,
         .ah-nav a.active {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.15);
         }
-        
-        main { padding: 1.5rem 0 3rem; }
-        
+
+        main {
+            padding: 1.5rem 0 3rem;
+        }
+
         .breadcrumb {
             display: flex;
             align-items: center;
@@ -130,26 +138,33 @@
             font-size: 0.875rem;
             color: var(--gray-600);
         }
-        
+
         .breadcrumb a {
             color: var(--ah-blue);
             text-decoration: none;
         }
-        
+
         .breadcrumb a:hover {
             text-decoration: underline;
         }
-        
+
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1.5rem;
         }
-        
-        .page-title { font-size: 1.75rem; font-weight: 700; }
-        .page-subtitle { color: var(--gray-600); margin-top: 0.25rem; }
-        
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .page-subtitle {
+            color: var(--gray-600);
+            margin-top: 0.25rem;
+        }
+
         .invoice-meta {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -160,27 +175,32 @@
             box-shadow: var(--shadow);
             margin-bottom: 1.5rem;
         }
-        
+
         .meta-item {
             display: flex;
             flex-direction: column;
         }
-        
+
         .meta-label {
             font-size: 0.75rem;
             color: var(--gray-600);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .meta-value {
             font-size: 1.1rem;
             font-weight: 600;
         }
-        
-        .meta-value.highlight { color: var(--ah-blue); }
-        .meta-value.success { color: var(--ah-green); }
-        
+
+        .meta-value.highlight {
+            color: var(--ah-blue);
+        }
+
+        .meta-value.success {
+            color: var(--ah-green);
+        }
+
         .card {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
@@ -188,7 +208,7 @@
             overflow: hidden;
             margin-bottom: 1.5rem;
         }
-        
+
         .card-header {
             padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--border-color);
@@ -197,10 +217,15 @@
             align-items: center;
             background: var(--gray-50);
         }
-        
-        .card-title { font-weight: 600; }
-        .card-body { padding: 1.25rem; }
-        
+
+        .card-title {
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -214,20 +239,44 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        
-        .btn-primary { background: var(--ah-blue); color: var(--white); }
-        .btn-primary:hover { background: var(--ah-blue-dark); }
-        .btn-secondary { background: var(--gray-100); color: var(--gray-800); }
-        .btn-secondary:hover { background: var(--gray-200); }
-        .btn-success { background: var(--ah-green); color: var(--white); }
-        .btn-success:hover { background: #4CAF50; }
-        .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.75rem; }
-        
+
+        .btn-primary {
+            background: var(--ah-blue);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--ah-blue-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-800);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .btn-success {
+            background: var(--ah-green);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            background: #4CAF50;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.625rem;
+            font-size: 0.75rem;
+        }
+
         .product-table {
             width: 100%;
             border-collapse: collapse;
         }
-        
+
         .product-table th {
             text-align: left;
             padding: 0.75rem 1rem;
@@ -239,29 +288,29 @@
             border-bottom: 2px solid var(--border-color);
             background: var(--gray-50);
         }
-        
+
         .product-table td {
             padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
         }
-        
+
         .product-table tbody tr:hover {
             background: var(--gray-50);
         }
-        
+
         .product-table tbody tr.validated {
             background: rgba(92, 184, 47, 0.05);
         }
-        
+
         .product-table tbody tr.validated td:first-child {
             border-left: 3px solid var(--ah-green);
         }
-        
+
         .product-name {
             font-weight: 500;
         }
-        
+
         .category-select,
         .subcategory-select {
             padding: 0.375rem 0.5rem;
@@ -272,35 +321,35 @@
             cursor: pointer;
             min-width: 140px;
         }
-        
+
         .subcategory-select {
             min-width: 120px;
         }
-        
+
         .category-select:focus,
         .subcategory-select:focus {
             outline: none;
             border-color: var(--ah-blue);
             box-shadow: 0 0 0 2px rgba(0, 173, 230, 0.2);
         }
-        
+
         .category-select.changed {
             background: #FFF8E1;
             border-color: var(--ah-orange);
         }
-        
+
         .checkbox-wrapper {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .checkbox-wrapper input[type="checkbox"] {
             width: 18px;
             height: 18px;
             accent-color: var(--ah-green);
         }
-        
+
         .badge {
             display: inline-block;
             padding: 0.2rem 0.4rem;
@@ -308,12 +357,27 @@
             font-size: 0.65rem;
             font-weight: 600;
         }
-        
-        .badge-success { background: #D4EDDA; color: #155724; }
-        .badge-warning { background: #FFF3CD; color: #856404; }
-        .badge-info { background: #E3F2FD; color: #0D47A1; }
-        .badge-changed { background: #FFF8E1; color: #F57C00; }
-        
+
+        .badge-success {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #E3F2FD;
+            color: #0D47A1;
+        }
+
+        .badge-changed {
+            background: #FFF8E1;
+            color: #F57C00;
+        }
+
         .raw-text-container {
             background: var(--gray-800);
             color: var(--gray-100);
@@ -326,14 +390,14 @@
             overflow: auto;
             white-space: pre-wrap;
         }
-        
+
         .feedback-form {
             background: var(--gray-50);
             padding: 1rem;
             border-radius: var(--radius);
             margin-top: 1rem;
         }
-        
+
         .feedback-form textarea {
             width: 100%;
             padding: 0.75rem;
@@ -344,18 +408,18 @@
             resize: vertical;
             min-height: 80px;
         }
-        
+
         .feedback-form textarea:focus {
             outline: none;
             border-color: var(--ah-blue);
         }
-        
+
         .action-bar {
             display: flex;
             gap: 0.5rem;
             align-items: center;
         }
-        
+
         .toast {
             position: fixed;
             bottom: 2rem;
@@ -368,15 +432,62 @@
             z-index: 1000;
             animation: slideIn 0.3s ease;
         }
-        
-        .toast.success { background: var(--ah-green); }
-        .toast.error { background: var(--ah-red); }
-        
-        @keyframes slideIn {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+
+        .toast.success {
+            background: var(--ah-green);
         }
-        
+
+        .toast.error {
+            background: var(--ah-red);
+        }
+
+        .confirm-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+        }
+
+        .confirm-modal {
+            background: var(--white);
+            border-radius: 14px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 420px;
+            padding: 1.25rem;
+        }
+
+        .confirm-modal h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .confirm-modal p {
+            margin: 0 0 1rem;
+            color: var(--gray-700);
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
         .loading {
             display: flex;
             flex-direction: column;
@@ -386,7 +497,7 @@
             gap: 1rem;
             color: var(--gray-600);
         }
-        
+
         .loading-spinner {
             width: 40px;
             height: 40px;
@@ -395,18 +506,20 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
-        
+
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .tabs {
             display: flex;
             gap: 0;
             border-bottom: 2px solid var(--border-color);
             margin-bottom: -2px;
         }
-        
+
         .tab {
             padding: 0.75rem 1.25rem;
             font-weight: 500;
@@ -416,47 +529,150 @@
             margin-bottom: -2px;
             transition: all 0.2s;
         }
-        
-        .tab:hover { color: var(--gray-900); }
-        
+
+        .tab:hover {
+            color: var(--gray-900);
+        }
+
         .tab.active {
             color: var(--ah-blue);
             border-bottom-color: var(--ah-blue);
         }
-        
+
         .tab-content {
             display: none;
         }
-        
+
         .tab-content.active {
             display: block;
         }
-        
+
         .ah-footer {
             background: var(--gray-800);
             color: var(--white);
             padding: 2rem 0;
             margin-top: 3rem;
         }
-        
+
         .footer-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .footer-links {
             display: flex;
             gap: 1.5rem;
         }
-        
+
         .footer-links a {
             color: var(--gray-400);
             text-decoration: none;
             font-size: 0.875rem;
         }
+
+        /* Multi-select styling */
+        .select-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--ah-blue);
+        }
+
+        .product-table tr.selected {
+            background: #E3F2FD !important;
+        }
+
+        .bulk-toolbar {
+            position: sticky;
+            top: 88px;
+            z-index: 99;
+            background: var(--ah-blue);
+            color: white;
+            padding: 1rem 1.25rem;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-radius: var(--radius-lg);
+            margin-bottom: 1rem;
+            animation: slideDown 0.2s ease;
+        }
+
+        .bulk-toolbar.show {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .bulk-toolbar-info {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .bulk-toolbar-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .bulk-toolbar .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .bulk-toolbar .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .bulk-select-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .bulk-dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            min-width: 200px;
+            box-shadow: var(--shadow-md);
+            border-radius: var(--radius);
+            z-index: 1000;
+            color: var(--gray-900);
+            margin-top: 0.25rem;
+        }
+
+        .bulk-dropdown-content.show {
+            display: block;
+        }
+
+        .bulk-dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .bulk-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .bulk-dropdown-item:hover {
+            background: var(--gray-50);
+        }
     </style>
 </head>
+
 <body>
     <header class="ah-header">
         <div class="ah-header-top">
@@ -473,6 +689,7 @@
                 </a>
                 <nav class="ah-nav">
                     <a href="/">Dashboard</a>
+                    <a href="/budget">Budget</a>
                     <a href="/search">Producten</a>
                     <a href="/invoices" class="active">Facturen</a>
                     <a href="/categories">Categorieën</a>
@@ -481,7 +698,7 @@
             </div>
         </div>
     </header>
-    
+
     <main>
         <div class="container">
             <div class="breadcrumb">
@@ -491,7 +708,7 @@
                 <span>›</span>
                 <span id="breadcrumb-title">Factuur</span>
             </div>
-            
+
             <div id="app">
                 <div class="loading">
                     <div class="loading-spinner"></div>
@@ -500,7 +717,7 @@
             </div>
         </div>
     </main>
-    
+
     <footer class="ah-footer">
         <div class="container">
             <div class="footer-content">
@@ -512,20 +729,20 @@
             </div>
         </div>
     </footer>
-    
+
     <script>
         const INVOICE_ID = {{ invoice_id }};
         let categories = [];
         let invoice = null;
         let subcategoriesData = {};  // Subcats per category
-        
+
         function formatCurrency(amount) {
             return new Intl.NumberFormat('nl-NL', {
                 style: 'currency',
                 currency: 'EUR'
             }).format(amount || 0);
         }
-        
+
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             return new Date(dateStr).toLocaleDateString('nl-NL', {
@@ -534,16 +751,16 @@
                 day: 'numeric'
             });
         }
-        
+
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             document.body.appendChild(toast);
-            
+
             setTimeout(() => toast.remove(), 3000);
         }
-        
+
         async function loadData() {
             try {
                 const [invoiceRes, categoriesRes, subcatsRes] = await Promise.all([
@@ -551,12 +768,12 @@
                     fetch('/api/categories'),
                     fetch('/api/subcategories')
                 ]);
-                
+
                 if (!invoiceRes.ok) throw new Error('Factuur niet gevonden');
-                
+
                 invoice = await invoiceRes.json();
                 categories = await categoriesRes.json();
-                
+
                 // Organize subcategories by category name
                 const subcatList = await subcatsRes.json();
                 subcategoriesData = {};
@@ -566,9 +783,9 @@
                     }
                     subcategoriesData[s.category_name].push(s);
                 });
-                
+
                 document.getElementById('breadcrumb-title').textContent = invoice.invoice_number || 'Factuur';
-                
+
                 renderInvoice();
             } catch (error) {
                 document.getElementById('app').innerHTML = `
@@ -579,12 +796,12 @@
                 `;
             }
         }
-        
+
         function renderInvoice() {
             const app = document.getElementById('app');
             const validatedCount = invoice.products.filter(p => p.is_validated).length;
             const changedCount = invoice.products.filter(p => p.user_category).length;
-            
+
             app.innerHTML = `
                 <div class="page-header">
                     <div>
@@ -629,16 +846,45 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="tabs">
-                            <div class="tab active" onclick="switchTab('products')">Producten</div>
-                            <div class="tab" onclick="switchTab('raw')">Originele tekst</div>
-                            <div class="tab" onclick="switchTab('feedback')">Feedback</div>
+                            <div class="tab active" data-tab="products" onclick="switchTab('products', this)">Producten</div>
+                            <div class="tab" data-tab="raw" onclick="switchTab('raw', this)">Originele tekst</div>
+                            <div class="tab" data-tab="feedback" onclick="switchTab('feedback', this)">Feedback</div>
                         </div>
                     </div>
                     
                     <div id="tab-products" class="tab-content active">
+                        <!-- Bulk Action Toolbar -->
+                        <div class="bulk-toolbar" id="bulk-toolbar">
+                            <div class="bulk-toolbar-info">
+                                <span id="selected-count">0</span> geselecteerd
+                            </div>
+                            <div class="bulk-toolbar-actions">
+                                <button class="btn btn-sm" onclick="bulkValidate()">✓ Valideren</button>
+                                <div class="bulk-select-dropdown">
+                                    <button class="btn btn-sm" onclick="toggleBulkCategoryDropdown()">🏷️ Categoriseren</button>
+                                    <div class="bulk-dropdown-content" id="bulk-category-dropdown">
+                                        ${categories.map(cat => `
+                                            <div class="bulk-dropdown-item" onclick="bulkSetCategory('${cat.name}')">
+                                                ${cat.icon} ${cat.name}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm" onclick="bulkSelectOverig()">📦 Selecteer Overig</button>
+                                <button class="btn btn-sm" onclick="clearSelection()">✕ Deselecteren</button>
+                            </div>
+                        </div>
+
                         <table class="product-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox"
+                                               class="select-checkbox"
+                                               id="select-all"
+                                               onchange="toggleSelectAll(this.checked)"
+                                               title="Selecteer alles">
+                                    </th>
                                     <th style="width: 40px;">✓</th>
                                     <th>Product</th>
                                     <th>Aantal</th>
@@ -650,7 +896,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${invoice.products.map(renderProductRow).join('')}
+                                ${invoice.products.map((product, index) => renderProductRow(product, index)).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -681,18 +927,26 @@
                 </div>
             `;
         }
-        
-        function renderProductRow(product) {
+
+        function renderProductRow(product, index) {
             const isChanged = product.user_category && product.user_category !== product.auto_category;
             const effectiveCat = product.effective_category || product.auto_category;
             const subcategory = product.user_subcategory || product.auto_subcategory;
-            
+
             return `
-                <tr class="${product.is_validated ? 'validated' : ''}" data-id="${product.id}">
+                <tr class="${product.is_validated ? 'validated' : ''}" data-id="${product.id}" data-index="${index}">
+                    <td>
+                        <input type="checkbox"
+                               class="select-checkbox row-select"
+                               data-id="${product.id}"
+                               onchange="toggleRowSelect(${product.id}, this.checked, ${index})"
+                               onclick="handleShiftClick(event, ${index})"
+                               title="Selecteer product">
+                    </td>
                     <td>
                         <div class="checkbox-wrapper">
-                            <input type="checkbox" 
-                                   ${product.is_validated ? 'checked' : ''} 
+                            <input type="checkbox"
+                                   ${product.is_validated ? 'checked' : ''}
                                    onchange="toggleValidation(${product.id}, this.checked)"
                                    title="Markeer als gevalideerd">
                         </div>
@@ -742,21 +996,32 @@
                 </tr>
             `;
         }
-        
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-        
-        function switchTab(tabId) {
+
+        function setActiveTab(tabId) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            document.querySelector(`.tab-content#tab-${tabId}`).classList.add('active');
-            event.target.classList.add('active');
+
+            const tab = document.querySelector(`.tab[data-tab="${tabId}"]`) || document.querySelector('.tab[data-tab="products"]');
+            const content = document.querySelector(`#tab-${tabId}`) || document.querySelector('#tab-products');
+            if (content) content.classList.add('active');
+            if (tab) tab.classList.add('active');
         }
-        
+
+        function switchTab(tabId, el) {
+            setActiveTab(tabId);
+        }
+
+        function getActiveTabId() {
+            const activeTab = document.querySelector('.tab.active');
+            return activeTab?.dataset.tab || 'products';
+        }
+
         async function toggleValidation(productId, isValid) {
             try {
                 await fetch(`/api/products/${productId}/validate`, {
@@ -764,7 +1029,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_valid: isValid })
                 });
-                
+
                 // Update row styling
                 const row = document.querySelector(`tr[data-id="${productId}"]`);
                 if (isValid) {
@@ -772,24 +1037,28 @@
                 } else {
                     row.classList.remove('validated');
                 }
-                
+
                 // Update product in local data
                 const product = invoice.products.find(p => p.id === productId);
                 if (product) product.is_validated = isValid ? 1 : 0;
-                
+
             } catch (error) {
                 showToast('Fout bij valideren', 'error');
             }
         }
-        
+
         async function updateCategory(productId, category, selectEl) {
             try {
-                await fetch(`/api/products/${productId}/category`, {
+                const response = await fetch(`/api/products/${productId}/category`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ category, apply_to_similar: false })
                 });
-                
+                const result = await safeJson(response);
+                if (!response.ok) {
+                    throw new Error(result.error || 'Bijwerken mislukt');
+                }
+
                 // Update styling
                 const original = selectEl.dataset.original;
                 if (category !== original) {
@@ -797,86 +1066,115 @@
                 } else {
                     selectEl.classList.remove('changed');
                 }
-                
+
                 // Update the subcategory dropdown for this product
                 const row = selectEl.closest('tr');
                 const subcatSelect = row.querySelector('.subcategory-select');
                 if (subcatSelect) {
-                    subcatSelect.innerHTML = `<option value="">-</option>` + 
+                    subcatSelect.innerHTML = `<option value="">-</option>` +
                         (subcategoriesData[category] || []).map(sub => `
                             <option value="${sub.name}">${sub.icon} ${sub.name}</option>
                         `).join('');
                 }
-                
+
                 showToast('Categorie bijgewerkt');
             } catch (error) {
                 showToast('Fout bij bijwerken', 'error');
             }
         }
-        
+
         async function updateSubcategory(productId, subcategory) {
             if (!subcategory) return;
-            
+
             try {
-                await fetch(`/api/products/${productId}/subcategory`, {
+                const response = await fetch(`/api/products/${productId}/subcategory`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ subcategory, apply_to_similar: false })
                 });
-                
+                const result = await safeJson(response);
+                if (!response.ok) {
+                    throw new Error(result.error || 'Bijwerken mislukt');
+                }
+
                 showToast('Subcategorie bijgewerkt');
             } catch (error) {
                 showToast('Fout bij bijwerken', 'error');
             }
         }
-        
+
         async function applyToSimilar(productId) {
             const product = invoice.products.find(p => p.id === productId);
             if (!product) return;
-            
+
             const selectEl = document.querySelector(`tr[data-id="${productId}"] .category-select`);
             const category = selectEl.value;
-            
-            if (!confirm(`Wil je alle "${product.original_name}" producten naar "${category}" verplaatsen?`)) {
-                return;
-            }
-            
+            const subcatSelect = document.querySelector(`tr[data-id="${productId}"] .subcategory-select`);
+            const subcategory = subcatSelect ? subcatSelect.value : '';
+
+            const confirmed = await confirmAction({
+                title: 'Pas toe op soortgelijke producten',
+                message: `Pas "${product.original_name}" toe op alle gelijknamige producten?`,
+                confirmText: 'Toepassen',
+                cancelText: 'Annuleren'
+            });
+            if (!confirmed) return;
+
             try {
                 const response = await fetch(`/api/products/${productId}/category`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ category, apply_to_similar: true })
                 });
-                
-                const result = await response.json();
+
+                const result = await safeJson(response);
+                if (!response.ok) {
+                    throw new Error(result.error || 'Bijwerken mislukt');
+                }
+
+                if (subcategory) {
+                    const subResp = await fetch(`/api/products/${productId}/subcategory`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subcategory, apply_to_similar: true })
+                    });
+                    const subResult = await safeJson(subResp);
+                    if (!subResp.ok) {
+                        throw new Error(subResult.error || 'Subcategorie bijwerken mislukt');
+                    }
+                }
                 const count = result.updated_count || 1;
                 showToast(`${count} "${result.product_name || product.original_name}" producten bijgewerkt naar ${category}`);
-                loadData(); // Reload to show changes
+                const activeTab = getActiveTabId();
+                const scrollY = window.scrollY;
+                await loadData();
+                setActiveTab(activeTab);
+                window.scrollTo({ top: scrollY, behavior: 'auto' });
             } catch (error) {
                 showToast('Fout bij bijwerken', 'error');
             }
         }
-        
+
         async function validateAllVisible() {
             const checkboxes = document.querySelectorAll('.product-table input[type="checkbox"]:not(:checked)');
-            
+
             for (const cb of checkboxes) {
                 cb.checked = true;
                 const row = cb.closest('tr');
                 const productId = row.dataset.id;
                 await toggleValidation(parseInt(productId), true);
             }
-            
+
             showToast(`${checkboxes.length} producten gevalideerd`);
         }
-        
+
         async function submitFeedback() {
             const text = document.getElementById('feedback-text').value.trim();
             if (!text) {
                 showToast('Vul eerst feedback in', 'error');
                 return;
             }
-            
+
             try {
                 await fetch('/api/feedback', {
                     method: 'POST',
@@ -887,18 +1185,60 @@
                         notes: text
                     })
                 });
-                
+
                 document.getElementById('feedback-text').value = '';
                 showToast('Feedback verstuurd, bedankt!');
             } catch (error) {
                 showToast('Fout bij versturen', 'error');
             }
         }
-        
+
         function escapeJs(text) {
             return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
         }
-        
+
+        async function safeJson(response) {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                const preview = text.slice(0, 120).replace(/\s+/g, ' ');
+                throw new Error(`Serverfout (${response.status}): ${preview || 'onleesbare response'}`);
+            }
+        }
+
+        function confirmAction({ title, message, confirmText = 'Bevestigen', cancelText = 'Annuleren', danger = false }) {
+            return new Promise((resolve) => {
+                const backdrop = document.createElement('div');
+                backdrop.className = 'confirm-backdrop';
+                backdrop.innerHTML = `
+                    <div class="confirm-modal">
+                        <h3>${title}</h3>
+                        <p>${message}</p>
+                        <div class="confirm-actions">
+                            <button class="btn btn-secondary" id="confirm-cancel">${cancelText}</button>
+                            <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="confirm-ok">${confirmText}</button>
+                        </div>
+                    </div>
+                `;
+                backdrop.onclick = (e) => {
+                    if (e.target === backdrop) {
+                        backdrop.remove();
+                        resolve(false);
+                    }
+                };
+                document.body.appendChild(backdrop);
+                backdrop.querySelector('#confirm-cancel').onclick = () => {
+                    backdrop.remove();
+                    resolve(false);
+                };
+                backdrop.querySelector('#confirm-ok').onclick = () => {
+                    backdrop.remove();
+                    resolve(true);
+                };
+            });
+        }
+
         async function showProductModal(productName) {
             // Create modal backdrop
             const backdrop = document.createElement('div');
@@ -909,12 +1249,12 @@
                 z-index: 1000; animation: fadeIn 0.2s ease;
             `;
             backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
-            
+
             // Add fadeIn animation
             const style = document.createElement('style');
             style.textContent = '@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }';
             document.head.appendChild(style);
-            
+
             backdrop.innerHTML = `
                 <div style="background: var(--white); border-radius: 16px; width: 90%; max-width: 800px; 
                             max-height: 90vh; overflow: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
@@ -925,18 +1265,18 @@
                 </div>
             `;
             document.body.appendChild(backdrop);
-            
+
             try {
                 const response = await fetch(`/api/products/details/${encodeURIComponent(productName)}`);
-                const product = await response.json();
-                
+                const product = await safeJson(response);
+
                 if (product.error) throw new Error(product.error);
-                
-                const trendIcon = product.price_trend?.direction === 'up' ? '📈' : 
-                                  product.price_trend?.direction === 'down' ? '📉' : '➡️';
-                const trendColor = product.price_trend?.direction === 'up' ? 'var(--ah-red)' : 
-                                   product.price_trend?.direction === 'down' ? 'var(--ah-green)' : 'var(--gray-600)';
-                
+
+                const trendIcon = product.price_trend?.direction === 'up' ? '📈' :
+                    product.price_trend?.direction === 'down' ? '📉' : '➡️';
+                const trendColor = product.price_trend?.direction === 'up' ? 'var(--ah-red)' :
+                    product.price_trend?.direction === 'down' ? 'var(--ah-green)' : 'var(--gray-600)';
+
                 backdrop.innerHTML = `
                     <div style="background: var(--white); border-radius: 16px; width: 90%; max-width: 800px; 
                                 max-height: 90vh; overflow: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
@@ -1011,9 +1351,209 @@
                 `;
             }
         }
-        
+
+        // ========== MULTI-SELECT FUNCTIONALITY ==========
+        let selectedProducts = new Set();
+        let lastSelectedIndex = null;
+
+        function toggleRowSelect(productId, checked, index) {
+            const row = document.querySelector(`tr[data-id="${productId}"]`);
+
+            if (checked) {
+                selectedProducts.add(productId);
+                row.classList.add('selected');
+            } else {
+                selectedProducts.delete(productId);
+                row.classList.remove('selected');
+            }
+
+            lastSelectedIndex = index;
+            updateBulkToolbar();
+            updateSelectAllCheckbox();
+        }
+
+        function handleShiftClick(event, index) {
+            if (event.shiftKey && lastSelectedIndex !== null && lastSelectedIndex !== index) {
+                event.preventDefault();
+                const start = Math.min(lastSelectedIndex, index);
+                const end = Math.max(lastSelectedIndex, index);
+                const checkboxes = document.querySelectorAll('.row-select');
+
+                for (let i = start; i <= end; i++) {
+                    const checkbox = checkboxes[i];
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        const productId = parseInt(checkbox.dataset.id);
+                        selectedProducts.add(productId);
+                        const row = checkbox.closest('tr');
+                        row.classList.add('selected');
+                    }
+                }
+
+                updateBulkToolbar();
+                updateSelectAllCheckbox();
+            }
+        }
+
+        function toggleSelectAll(checked) {
+            const checkboxes = document.querySelectorAll('.row-select');
+            selectedProducts.clear();
+
+            checkboxes.forEach(cb => {
+                cb.checked = checked;
+                const row = cb.closest('tr');
+                const productId = parseInt(cb.dataset.id);
+
+                if (checked) {
+                    selectedProducts.add(productId);
+                    row.classList.add('selected');
+                } else {
+                    row.classList.remove('selected');
+                }
+            });
+
+            updateBulkToolbar();
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAllCb = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('.row-select');
+            if (selectAllCb) {
+                selectAllCb.checked = checkboxes.length > 0 && selectedProducts.size === checkboxes.length;
+            }
+        }
+
+        function updateBulkToolbar() {
+            const toolbar = document.getElementById('bulk-toolbar');
+            const countEl = document.getElementById('selected-count');
+
+            if (toolbar && countEl) {
+                countEl.textContent = selectedProducts.size;
+                if (selectedProducts.size > 0) {
+                    toolbar.classList.add('show');
+                } else {
+                    toolbar.classList.remove('show');
+                }
+            }
+        }
+
+        async function bulkValidate() {
+            if (selectedProducts.size === 0) return;
+
+            const ids = Array.from(selectedProducts);
+            let successCount = 0;
+
+            for (const productId of ids) {
+                try {
+                    await fetch(`/api/products/${productId}/validate`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ is_valid: true })
+                    });
+
+                    const row = document.querySelector(`tr[data-id="${productId}"]`);
+                    row.classList.add('validated');
+                    const validationCb = row.querySelector('.checkbox-wrapper input[type="checkbox"]');
+                    if (validationCb) validationCb.checked = true;
+
+                    successCount++;
+                } catch (error) {
+                    console.error(`Failed to validate product ${productId}`, error);
+                }
+            }
+
+            showToast(`${successCount} producten gevalideerd`);
+            clearSelection();
+        }
+
+        async function bulkSetCategory(categoryName) {
+            if (selectedProducts.size === 0) return;
+
+            toggleBulkCategoryDropdown(); // Close dropdown
+
+            const ids = Array.from(selectedProducts);
+            let successCount = 0;
+
+            for (const productId of ids) {
+                try {
+                    await fetch(`/api/products/${productId}/category`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ category: categoryName, apply_to_similar: false })
+                    });
+
+                    const row = document.querySelector(`tr[data-id="${productId}"]`);
+                    const select = row.querySelector('.category-select');
+                    if (select) {
+                        select.value = categoryName;
+                        select.classList.add('changed');
+                    }
+
+                    successCount++;
+                } catch (error) {
+                    console.error(`Failed to update product ${productId}`, error);
+                }
+            }
+
+            showToast(`${successCount} producten → ${categoryName}`);
+            clearSelection();
+            loadData(); // Reload to update subcategories
+        }
+
+        function toggleBulkCategoryDropdown() {
+            const dropdown = document.getElementById('bulk-category-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
+
+            // Close when clicking outside
+            if (dropdown && dropdown.classList.contains('show')) {
+                setTimeout(() => {
+                    document.addEventListener('click', function closeDropdown(e) {
+                        if (!e.target.closest('.bulk-select-dropdown')) {
+                            dropdown.classList.remove('show');
+                            document.removeEventListener('click', closeDropdown);
+                        }
+                    });
+                }, 10);
+            }
+        }
+
+        function bulkSelectOverig() {
+            const checkboxes = document.querySelectorAll('.row-select');
+            selectedProducts.clear();
+
+            checkboxes.forEach(cb => {
+                const row = cb.closest('tr');
+                const categorySelect = row.querySelector('.category-select');
+                const isOverig = categorySelect && categorySelect.value === 'Overig';
+
+                cb.checked = isOverig;
+                if (isOverig) {
+                    selectedProducts.add(parseInt(cb.dataset.id));
+                    row.classList.add('selected');
+                } else {
+                    row.classList.remove('selected');
+                }
+            });
+
+            updateBulkToolbar();
+            updateSelectAllCheckbox();
+            showToast(`${selectedProducts.size} 'Overig' producten geselecteerd`);
+        }
+
+        function clearSelection() {
+            selectedProducts.clear();
+            document.querySelectorAll('.row-select').forEach(cb => {
+                cb.checked = false;
+                cb.closest('tr').classList.remove('selected');
+            });
+            updateBulkToolbar();
+            updateSelectAllCheckbox();
+        }
+
         loadData();
     </script>
 </body>
-</html>
 
+</html>

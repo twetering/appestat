@@ -17,7 +17,65 @@ def get_connection():
     """Get database connection with row factory"""
     conn = sqlite3.connect(str(DATABASE_PATH))
     conn.row_factory = sqlite3.Row
+    # Ensure foreign key constraints are enforced in SQLite
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+def upsert_product_override(
+    product_name_pattern: str,
+    category_id: int,
+    subcategory_id: Optional[int] = None,
+    match_type: str = "exact",
+    source: str = "user",
+    confidence: float = 1.0,
+    increment_times: bool = True,
+    conn: Optional[sqlite3.Connection] = None
+):
+    """Upsert a product override without relying on UNIQUE constraints."""
+    owns_conn = False
+    if conn is None:
+        conn = get_connection()
+        owns_conn = True
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT id, times_applied
+        FROM product_overrides
+        WHERE product_name_pattern = ?
+    """, (product_name_pattern,))
+    existing = cursor.fetchone()
+    
+    if existing:
+        new_times = (existing['times_applied'] or 0) + (1 if increment_times else 0)
+        cursor.execute("""
+            UPDATE product_overrides
+            SET category_id = ?,
+                subcategory_id = ?,
+                match_type = ?,
+                source = ?,
+                confidence = ?,
+                times_applied = ?,
+                last_applied_at = CURRENT_TIMESTAMP
+            WHERE product_name_pattern = ?
+        """, (
+            category_id, subcategory_id, match_type, source, confidence, new_times, product_name_pattern
+        ))
+    else:
+        times = 1 if increment_times else 0
+        cursor.execute("""
+            INSERT INTO product_overrides (
+                product_name_pattern, category_id, subcategory_id,
+                match_type, source, confidence, times_applied, last_applied_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            product_name_pattern, category_id, subcategory_id,
+            match_type, source, confidence, times
+        ))
+    
+    if owns_conn:
+        conn.commit()
+        conn.close()
 
 
 def init_database():
@@ -60,6 +118,7 @@ def init_database():
             is_validated BOOLEAN DEFAULT 0,
             validation_notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
         )
     """)
@@ -105,6 +164,31 @@ def init_database():
             FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
         )
     """)
+
+    # Category keywords table (preferred over category_rules)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS category_keywords (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_id INTEGER NOT NULL,
+            subcategory_id INTEGER,
+            keyword TEXT NOT NULL,
+            match_type TEXT DEFAULT 'contains',
+            priority INTEGER DEFAULT 0,
+            is_active BOOLEAN DEFAULT 1,
+            created_by TEXT DEFAULT 'system',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+            FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE SET NULL,
+            UNIQUE(category_id, keyword)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_category_keywords_keyword ON category_keywords(keyword)
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_category_keywords_active ON category_keywords(is_active, priority DESC)
+    """)
     
     # Product category overrides (user corrections)
     cursor.execute("""
@@ -112,8 +196,41 @@ def init_database():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_name_pattern TEXT NOT NULL,
             category_id INTEGER NOT NULL,
+            subcategory_id INTEGER,
+            match_type TEXT DEFAULT 'exact',
+            source TEXT DEFAULT 'user',
+            confidence REAL DEFAULT 1.0,
+            times_applied INTEGER DEFAULT 0,
+            last_applied_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+            FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE SET NULL
+        )
+    """)
+
+    cursor.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_product_overrides_pattern
+        ON product_overrides(product_name_pattern)
+    """)
+
+    # LLM suggestions queue (review before applying)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS llm_suggestions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_name TEXT NOT NULL,
+            category_id INTEGER NOT NULL,
+            subcategory_id INTEGER,
+            confidence REAL DEFAULT 0.0,
+            model TEXT,
+            prompt_version TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            decided_at TIMESTAMP,
+            decided_by TEXT,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+            FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE SET NULL,
+            UNIQUE(product_name)
         )
     """)
     
@@ -133,24 +250,55 @@ def init_database():
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         )
     """)
-    
+
+    # Budget goals table (Budget 2026)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS budget_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_name TEXT NOT NULL,
+            reference_year INTEGER NOT NULL,
+            target_year INTEGER NOT NULL,
+            reference_quantity REAL DEFAULT 0,
+            reference_total_cost REAL DEFAULT 0,
+            target_quantity REAL,
+            moscow_label TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(product_name, target_year)
+        )
+    """)
+
     conn.commit()
     
-    # Insert default categories
+    # Insert default categories (AH.nl gebaseerde structuur)
     default_categories = [
-        ("Zuivel & Eieren", "#00ADE6", "🥛", 1, 1),
-        ("Groente & Fruit", "#7CB518", "🥦", 1, 2),
-        ("Vlees & Vis", "#E63946", "🥩", 1, 3),
-        ("Brood & Bakkerij", "#D4A574", "🍞", 1, 4),
-        ("Pasta, Rijst & Granen", "#FFB347", "🍝", 1, 5),
-        ("Dranken", "#4FC3F7", "🥤", 1, 6),
-        ("Sauzen & Specerijen", "#FF7043", "🧂", 1, 7),
-        ("Snacks & Zoetwaren", "#AB47BC", "🍫", 1, 8),
-        ("Huishouden", "#78909C", "🧹", 1, 9),
-        ("Persoonlijke Verzorging", "#F48FB1", "🧴", 1, 10),
-        ("Verpakking & Statiegeld", "#90A4AE", "📦", 1, 11),
-        ("Bezorgkosten", "#607D8B", "🚚", 1, 12),
-        ("Abonnementen", "#9C27B0", "⭐", 1, 13),
+        ("Groente & Aardappelen", "#7CB518", "🥦", 1, 1),
+        ("Fruit & Verse sappen", "#E63946", "🍎", 1, 2),
+        ("Maaltijden & Salades", "#2A9D8F", "🥗", 1, 3),
+        ("Vlees", "#C1121F", "🥩", 1, 4),
+        ("Vis", "#0077B6", "🐟", 1, 5),
+        ("Vegetarisch & Vegan", "#52B788", "🌱", 1, 6),
+        ("Vleeswaren", "#BC6C25", "🥓", 1, 7),
+        ("Kaas", "#FFBA08", "🧀", 1, 8),
+        ("Zuivel & Eieren", "#00ADE6", "🥛", 1, 9),
+        ("Bakkerij", "#D4A574", "🍞", 1, 10),
+        ("Borrel, Chips & Snacks", "#F4A261", "🥜", 1, 11),
+        ("Pasta, Rijst & Wereldkeuken", "#FFB347", "🍝", 1, 12),
+        ("Soepen, Sauzen & Kruiden", "#FF7043", "🫙", 1, 13),
+        ("Koek, Snoep & Chocolade", "#AB47BC", "🍫", 1, 14),
+        ("Ontbijtgranen & Beleg", "#FFC300", "🥣", 1, 15),
+        ("Tussendoortjes", "#E9C46A", "🍪", 1, 16),
+        ("Diepvries", "#48CAE4", "❄️", 1, 17),
+        ("Koffie & Thee", "#6F4E37", "☕", 1, 18),
+        ("Frisdrank & Water", "#4FC3F7", "🥤", 1, 19),
+        ("Bier, Wijn & Aperitieven", "#722F37", "🍷", 1, 20),
+        ("Drogisterij", "#F48FB1", "🧴", 1, 21),
+        ("Huishouden", "#78909C", "🧹", 1, 22),
+        ("Baby & Kind", "#90CAF9", "👶", 1, 23),
+        ("Huisdier", "#A1887F", "🐕", 1, 24),
+        ("Verpakking & Statiegeld", "#90A4AE", "📦", 1, 25),
+        ("Bezorgkosten", "#607D8B", "🚚", 1, 26),
         ("Overig", "#9E9E9E", "📋", 1, 99),
     ]
     
@@ -159,98 +307,6 @@ def init_database():
             INSERT OR IGNORE INTO categories (name, color, icon, is_system, sort_order)
             VALUES (?, ?, ?, ?, ?)
         """, (name, color, icon, is_system, sort_order))
-    
-    conn.commit()
-    
-    # Insert default subcategories
-    default_subcategories = {
-        "Zuivel & Eieren": [
-            ("Melk", "🥛"),
-            ("Kaas", "🧀"),
-            ("Yoghurt & Kwark", "🥄"),
-            ("Boter & Margarine", "🧈"),
-            ("Eieren", "🥚"),
-            ("Room & Vla", "🍮"),
-            ("Plantaardig", "🌱"),
-        ],
-        "Groente & Fruit": [
-            ("Groente", "🥬"),
-            ("Fruit", "🍎"),
-            ("Kruiden", "🌿"),
-            ("Peulvruchten", "🫘"),
-            ("Salades", "🥗"),
-            ("Aardappelen", "🥔"),
-        ],
-        "Vlees & Vis": [
-            ("Kip", "🍗"),
-            ("Rund & Varken", "🥩"),
-            ("Vis", "🐟"),
-            ("Vleeswaren", "🥓"),
-            ("Vegetarisch & Vegan", "🌱"),
-            ("Wild & Gevogelte", "🦆"),
-        ],
-        "Brood & Bakkerij": [
-            ("Brood", "🍞"),
-            ("Gebak & Taart", "🍰"),
-            ("Ontbijtproducten", "🥐"),
-            ("Crackers & Toast", "🥪"),
-        ],
-        "Pasta, Rijst & Granen": [
-            ("Pasta", "🍝"),
-            ("Rijst", "🍚"),
-            ("Granen & Muesli", "🌾"),
-            ("Peulvruchten Droog", "🫘"),
-        ],
-        "Dranken": [
-            ("Koffie", "☕"),
-            ("Thee", "🍵"),
-            ("Frisdrank", "🥤"),
-            ("Sap & Smoothies", "🧃"),
-            ("Bier", "🍺"),
-            ("Wijn", "🍷"),
-            ("Sterke Drank", "🥃"),
-            ("Water", "💧"),
-            ("Sportdranken", "⚡"),
-            ("Plantaardige Dranken", "🥛"),
-        ],
-        "Sauzen & Specerijen": [
-            ("Sauzen", "🫙"),
-            ("Kruiden & Specerijen", "🧂"),
-            ("Olie & Azijn", "🫒"),
-            ("Pasta Sauzen", "🍅"),
-        ],
-        "Snacks & Zoetwaren": [
-            ("Chips & Noten", "🥜"),
-            ("Snoep", "🍬"),
-            ("Chocolade", "🍫"),
-            ("Koekjes", "🍪"),
-            ("Ijs", "🍨"),
-        ],
-        "Huishouden": [
-            ("Schoonmaak", "🧹"),
-            ("Wasmiddel", "🧺"),
-            ("Keukenbenodigdheden", "🍽️"),
-            ("Vuilniszakken & Folie", "🗑️"),
-        ],
-        "Persoonlijke Verzorging": [
-            ("Haar", "💇"),
-            ("Huid", "🧴"),
-            ("Mondverzorging", "🦷"),
-            ("Hygiëne", "🚿"),
-        ],
-    }
-    
-    for category_name, subcats in default_subcategories.items():
-        # Haal category id op
-        cursor.execute("SELECT id FROM categories WHERE name = ?", (category_name,))
-        cat_row = cursor.fetchone()
-        if cat_row:
-            cat_id = cat_row['id']
-            for i, (subcat_name, icon) in enumerate(subcats):
-                cursor.execute("""
-                    INSERT OR IGNORE INTO subcategories (name, category_id, icon, sort_order)
-                    VALUES (?, ?, ?, ?)
-                """, (subcat_name, cat_id, icon, i + 1))
     
     conn.commit()
     conn.close()
@@ -292,21 +348,42 @@ def save_invoice(invoice_data: Dict) -> int:
     conn = get_connection()
     cursor = conn.cursor()
     
+    # Support both old and new field names for backwards compatibility
+    invoice_date = invoice_data.get('invoice_date') or invoice_data.get('date')
+    total_amount = invoice_data.get('total_amount') or invoice_data.get('total', 0)
+    total_savings = invoice_data.get('total_savings') or invoice_data.get('savings', 0)
+    
     cursor.execute("""
-        INSERT INTO invoices (file_hash, filename, invoice_number, invoice_date, 
-                             total_amount, total_savings, raw_text)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO invoices (file_hash, filename, invoice_number, invoice_date,
+                             total_amount, total_savings, raw_text, source_type, external_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         invoice_data['file_hash'],
         invoice_data['filename'],
         invoice_data.get('invoice_number'),
-        invoice_data.get('date'),
-        invoice_data.get('total', 0),
-        invoice_data.get('savings', 0),
-        invoice_data.get('raw_text', '')
+        invoice_date,
+        total_amount,
+        total_savings,
+        invoice_data.get('raw_text', ''),
+        invoice_data.get('source_type', 'ah_online'),
+        invoice_data.get('external_id'),
     ))
     
     invoice_id = cursor.lastrowid
+
+    # Optional parse-quality columns come from migrations; only fill them when present
+    columns = {row['name'] for row in cursor.execute("PRAGMA table_info(invoices)").fetchall()}
+    extras = {
+        'source_metadata': json.dumps(invoice_data['source_metadata'], default=str)
+        if invoice_data.get('source_metadata') else None,
+        'parse_quality_score': invoice_data.get('parse_quality_score'),
+        'parse_notes': invoice_data.get('parse_notes'),
+    }
+    extras = {k: v for k, v in extras.items() if k in columns and v is not None}
+    if extras:
+        assignments = ", ".join(f"{k} = ?" for k in extras)
+        cursor.execute(f"UPDATE invoices SET {assignments} WHERE id = ?", (*extras.values(), invoice_id))
+
     conn.commit()
     conn.close()
     return invoice_id
@@ -318,23 +395,40 @@ def save_products(invoice_id: int, products: List[Dict]):
     cursor = conn.cursor()
     
     for product in products:
+        # Support both field name formats
+        name = product.get('name') or product.get('original_name') or product.get('display_name')
+        display = product.get('display_name') or name
+        category = product.get('category') or product.get('auto_category') or 'Overig'
+        subcategory = product.get('subcategory') or product.get('auto_subcategory')
+        btw = product.get('btw') or product.get('btw_percentage') or ''
+        
         cursor.execute("""
             INSERT INTO products (invoice_id, original_name, display_name, quantity, 
                                  price, btw_percentage, auto_category, auto_subcategory)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             invoice_id,
-            product['name'],
-            product['name'],
+            name,
+            display,
             product.get('quantity', 1),
             product.get('price', 0),
-            product.get('btw', ''),
-            product.get('category', 'Overig'),
-            product.get('subcategory')
+            btw,
+            category,
+            subcategory
         ))
     
     conn.commit()
     conn.close()
+
+
+def get_all_product_names() -> List[str]:
+    """All original product names (one entry per purchase), e.g. to correct OCR'd names."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT original_name FROM products")
+    names = [row['original_name'] for row in cursor.fetchall()]
+    conn.close()
+    return names
 
 
 def get_all_invoices() -> List[Dict]:
@@ -424,7 +518,7 @@ def update_product_category(product_id: int, category: str, apply_to_similar: bo
     if apply_to_similar:
         # Update alle producten met dezelfde naam
         cursor.execute("""
-            UPDATE products SET user_category = ?
+            UPDATE products SET user_category = ?, user_subcategory = NULL, updated_at = CURRENT_TIMESTAMP
             WHERE original_name = ?
         """, (category, product_name))
         updated_count = cursor.rowcount
@@ -433,14 +527,19 @@ def update_product_category(product_id: int, category: str, apply_to_similar: bo
         cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
         cat_row = cursor.fetchone()
         if cat_row:
-            cursor.execute("""
-                INSERT OR REPLACE INTO product_overrides (product_name_pattern, category_id)
-                VALUES (?, ?)
-            """, (product_name, cat_row['id']))
+            upsert_product_override(
+                product_name_pattern=product_name,
+                category_id=cat_row['id'],
+                subcategory_id=None,
+                match_type="exact",
+                source="user",
+                confidence=1.0,
+                conn=conn
+            )
     else:
         # Update alleen dit specifieke product
         cursor.execute("""
-            UPDATE products SET user_category = ?
+            UPDATE products SET user_category = ?, user_subcategory = NULL, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         """, (category, product_id))
         updated_count = cursor.rowcount
@@ -898,15 +997,15 @@ def get_product_details(product_name: str) -> Dict:
     
     # Basis info
     cursor.execute("""
-        SELECT 
+        SELECT
             original_name,
             COALESCE(user_category, auto_category) as category,
             COUNT(*) as purchase_count,
             SUM(quantity) as total_quantity,
             SUM(price) as total_spent,
-            AVG(price / NULLIF(quantity, 0)) as avg_unit_price,
-            MIN(price / NULLIF(quantity, 0)) as min_unit_price,
-            MAX(price / NULLIF(quantity, 0)) as max_unit_price
+            AVG(CASE WHEN price > 0 AND quantity > 0 THEN price / quantity ELSE NULL END) as avg_unit_price,
+            MIN(CASE WHEN price > 0 AND quantity > 0 THEN price / quantity ELSE NULL END) as min_unit_price,
+            MAX(CASE WHEN price > 0 AND quantity > 0 THEN price / quantity ELSE NULL END) as max_unit_price
         FROM products
         WHERE original_name = ?
         GROUP BY original_name
@@ -982,16 +1081,16 @@ def get_all_unique_products() -> List[Dict]:
     """Haal alle unieke producten op voor zoeken"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute("""
-        SELECT 
+        SELECT
             original_name as name,
             COALESCE(user_category, auto_category) as category,
             COALESCE(user_subcategory, auto_subcategory) as subcategory,
             COUNT(*) as purchase_count,
             SUM(quantity) as total_quantity,
             SUM(price) as total_spent,
-            AVG(price / NULLIF(quantity, 0)) as avg_unit_price
+            AVG(CASE WHEN price > 0 AND quantity > 0 THEN price / quantity ELSE NULL END) as avg_unit_price
         FROM products
         GROUP BY original_name
         ORDER BY total_spent DESC
@@ -1153,15 +1252,336 @@ def bulk_update_category_by_name(product_name: str, new_category: str):
     
     cursor.execute("""
         UPDATE products 
-        SET user_category = ?
+        SET user_category = ?, user_subcategory = NULL, updated_at = CURRENT_TIMESTAMP
         WHERE original_name = ?
     """, (new_category, product_name))
+    
+    # Persist override for future imports
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (new_category,))
+    cat_row = cursor.fetchone()
+    if cat_row:
+        upsert_product_override(
+            product_name_pattern=product_name,
+            category_id=cat_row['id'],
+            subcategory_id=None,
+            match_type="exact",
+            source="user",
+            confidence=1.0,
+            conn=conn
+        )
     
     affected = cursor.rowcount
     conn.commit()
     conn.close()
     
     return affected
+
+
+def bulk_update_category_by_names(product_names: List[str], new_category: str) -> int:
+    """Update categorie voor alle producten met deze namen (bulk)."""
+    if not product_names:
+        return 0
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    placeholders = ",".join(["?"] * len(product_names))
+    cursor.execute(f"""
+        UPDATE products
+        SET user_category = ?, user_subcategory = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE original_name IN ({placeholders})
+    """, (new_category, *product_names))
+    affected = cursor.rowcount
+    
+    # Persist overrides for future imports
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (new_category,))
+    cat_row = cursor.fetchone()
+    if cat_row:
+        for name in product_names:
+            upsert_product_override(
+                product_name_pattern=name,
+                category_id=cat_row['id'],
+                subcategory_id=None,
+                match_type="exact",
+                source="user",
+                confidence=1.0,
+                conn=conn
+            )
+    
+    conn.commit()
+    conn.close()
+    return affected
+
+
+def bulk_update_subcategory_by_names(
+    product_names: List[str],
+    subcategory: str,
+    category_name: Optional[str] = None
+) -> int:
+    """Update subcategorie voor alle producten met deze namen (bulk)."""
+    if not product_names:
+        return 0
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT s.id as subcategory_id, c.id as category_id, c.name as category_name
+        FROM subcategories s
+        JOIN categories c ON s.category_id = c.id
+        WHERE s.name = ?
+    """, (subcategory,))
+    subcat_row = cursor.fetchone()
+    
+    if not subcat_row:
+        conn.close()
+        raise ValueError("Subcategorie niet gevonden")
+    
+    if category_name and subcat_row['category_name'] != category_name:
+        conn.close()
+        raise ValueError("Subcategorie hoort niet bij de gekozen categorie")
+    
+    placeholders = ",".join(["?"] * len(product_names))
+    cursor.execute(f"""
+        UPDATE products
+        SET user_subcategory = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE original_name IN ({placeholders})
+          AND COALESCE(user_category, auto_category) = ?
+    """, (subcategory, *product_names, subcat_row['category_name']))
+    affected = cursor.rowcount
+    
+    # Persist overrides for future imports
+    for name in product_names:
+        upsert_product_override(
+            product_name_pattern=name,
+            category_id=subcat_row['category_id'],
+            subcategory_id=subcat_row['subcategory_id'],
+            match_type="exact",
+            source="user",
+            confidence=1.0,
+            conn=conn
+        )
+    
+    conn.commit()
+    conn.close()
+    return affected
+
+
+def save_llm_suggestions(suggestions: List[Dict]) -> int:
+    """Upsert LLM suggestions into the review queue."""
+    if not suggestions:
+        return 0
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    rows = []
+    for s in suggestions:
+        rows.append((
+            s['product_name'],
+            s['category_id'],
+            s.get('subcategory_id'),
+            s.get('confidence', 0.0),
+            s.get('model'),
+            s.get('prompt_version')
+        ))
+    
+    cursor.executemany("""
+        INSERT INTO llm_suggestions (
+            product_name, category_id, subcategory_id, confidence, model, prompt_version
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(product_name) DO UPDATE SET
+            category_id = excluded.category_id,
+            subcategory_id = excluded.subcategory_id,
+            confidence = excluded.confidence,
+            model = excluded.model,
+            prompt_version = excluded.prompt_version,
+            status = 'pending',
+            updated_at = CURRENT_TIMESTAMP
+    """, rows)
+    
+    conn.commit()
+    conn.close()
+    return len(suggestions)
+
+
+def get_llm_suggestions(status: str = "pending", limit: int = 100) -> List[Dict]:
+    """Get LLM suggestions with product stats for review."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT
+            ls.id,
+            ls.product_name,
+            ls.confidence,
+            ls.model,
+            ls.prompt_version,
+            ls.status,
+            ls.created_at,
+            c.name as category_name,
+            s.name as subcategory_name,
+            COUNT(p.id) as purchase_count,
+            SUM(p.price) as total_spent
+        FROM llm_suggestions ls
+        JOIN categories c ON ls.category_id = c.id
+        LEFT JOIN subcategories s ON ls.subcategory_id = s.id
+        LEFT JOIN products p ON p.original_name = ls.product_name
+        WHERE ls.status = ?
+        GROUP BY ls.id
+        ORDER BY COALESCE(total_spent, 0) DESC, purchase_count DESC
+        LIMIT ?
+    """, (status, limit))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+def update_llm_suggestions_bulk(overrides: List[Dict]) -> Dict:
+    """Update suggestion categories/subcategories by name before acceptance."""
+    if not overrides:
+        return {"updated": 0}
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    updated = 0
+    
+    for item in overrides:
+        suggestion_id = item.get("id")
+        category_name = item.get("category")
+        subcategory_name = item.get("subcategory")
+        
+        if not suggestion_id or not category_name:
+            continue
+        
+        cursor.execute("SELECT id FROM categories WHERE name = ?", (category_name,))
+        cat_row = cursor.fetchone()
+        if not cat_row:
+            continue
+        
+        cat_id = cat_row['id']
+        subcat_id = None
+        
+        if subcategory_name:
+            cursor.execute("""
+                SELECT id FROM subcategories WHERE name = ? AND category_id = ?
+            """, (subcategory_name, cat_id))
+            subcat_row = cursor.fetchone()
+            if subcat_row:
+                subcat_id = subcat_row['id']
+        
+        cursor.execute("""
+            UPDATE llm_suggestions
+            SET category_id = ?, subcategory_id = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (cat_id, subcat_id, suggestion_id))
+        
+        if cursor.rowcount > 0:
+            updated += 1
+    
+    conn.commit()
+    conn.close()
+    return {"updated": updated}
+
+
+def apply_llm_suggestions(suggestion_ids: List[int], decided_by: str = "user") -> Dict:
+    """Apply accepted LLM suggestions to products and overrides."""
+    if not suggestion_ids:
+        return {"applied": 0}
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    placeholders = ",".join(["?"] * len(suggestion_ids))
+    cursor.execute(f"""
+        SELECT
+            ls.id,
+            ls.product_name,
+            ls.category_id,
+            ls.subcategory_id,
+            ls.confidence,
+            c.name as category_name,
+            s.name as subcategory_name
+        FROM llm_suggestions ls
+        JOIN categories c ON ls.category_id = c.id
+        LEFT JOIN subcategories s ON ls.subcategory_id = s.id
+        WHERE ls.id IN ({placeholders}) AND ls.status = 'pending'
+    """, suggestion_ids)
+    
+    suggestions = cursor.fetchall()
+    if not suggestions:
+        conn.close()
+        return {"applied": 0}
+    
+    # Update products
+    product_rows = [
+        (row['category_name'], row['subcategory_name'], row['product_name'])
+        for row in suggestions
+    ]
+    cursor.executemany("""
+        UPDATE products
+        SET user_category = ?, user_subcategory = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE original_name = ?
+    """, product_rows)
+    
+    # Update overrides
+    for row in suggestions:
+        upsert_product_override(
+            product_name_pattern=row['product_name'],
+            category_id=row['category_id'],
+            subcategory_id=row['subcategory_id'],
+            match_type="exact",
+            source="user",
+            confidence=row['confidence'],
+            conn=conn
+        )
+    
+    # Mark suggestions as accepted
+    cursor.execute(f"""
+        UPDATE llm_suggestions
+        SET status = 'accepted',
+            decided_at = CURRENT_TIMESTAMP,
+            decided_by = ?
+        WHERE id IN ({placeholders})
+    """, (decided_by, *suggestion_ids))
+    
+    conn.commit()
+    conn.close()
+    return {"applied": len(suggestions)}
+
+
+def reject_llm_suggestions(suggestion_ids: List[int], decided_by: str = "user") -> Dict:
+    """Reject LLM suggestions."""
+    if not suggestion_ids:
+        return {"rejected": 0}
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    placeholders = ",".join(["?"] * len(suggestion_ids))
+    cursor.execute(f"""
+        UPDATE llm_suggestions
+        SET status = 'rejected',
+            decided_at = CURRENT_TIMESTAMP,
+            decided_by = ?
+        WHERE id IN ({placeholders}) AND status = 'pending'
+    """, (decided_by, *suggestion_ids))
+    
+    rejected = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return {"rejected": rejected}
+
+
+def get_llm_suggestions_count(status: str = "pending") -> int:
+    """Get count of LLM suggestions by status."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) as count FROM llm_suggestions WHERE status = ?", (status,))
+    count = cursor.fetchone()['count']
+    conn.close()
+    return count
 
 
 def reparse_all_invoices():
@@ -1176,8 +1596,8 @@ def reparse_all_invoices():
     
     print("Herparsing all invoices with improved parser...")
     
-    # Haal alle facturen op
-    cursor.execute("SELECT id, raw_text, filename FROM invoices")
+    # Alleen AH online facturen: raw_text van andere bronnen (PLUS-foto's, API) past niet bij deze parser
+    cursor.execute("SELECT id, raw_text, filename FROM invoices WHERE COALESCE(source_type, 'ah_online') = 'ah_online'")
     invoices = cursor.fetchall()
     
     total_old = 0
@@ -1305,7 +1725,10 @@ def update_product_subcategory(product_id: int, subcategory: str, apply_to_simil
     cursor = conn.cursor()
     
     # Haal het product op
-    cursor.execute("SELECT original_name FROM products WHERE id = ?", (product_id,))
+    cursor.execute("""
+        SELECT original_name, COALESCE(user_category, auto_category) as effective_category
+        FROM products WHERE id = ?
+    """, (product_id,))
     product = cursor.fetchone()
     
     if not product:
@@ -1315,15 +1738,48 @@ def update_product_subcategory(product_id: int, subcategory: str, apply_to_simil
     product_name = product['original_name']
     updated_count = 0
     
+    # Validate subcategory exists and belongs to the product's category
+    cursor.execute("""
+        SELECT s.id as subcategory_id, c.id as category_id, c.name as category_name
+        FROM subcategories s
+        JOIN categories c ON s.category_id = c.id
+        WHERE s.name = ?
+    """, (subcategory,))
+    subcat_row = cursor.fetchone()
+    
+    if not subcat_row:
+        conn.close()
+        return {"success": False, "error": "Subcategorie niet gevonden", "updated_count": 0}
+    
+    if subcat_row['category_name'] != product['effective_category']:
+        conn.close()
+        return {
+            "success": False,
+            "error": "Subcategorie hoort niet bij de gekozen categorie",
+            "updated_count": 0
+        }
+    
     if apply_to_similar:
         cursor.execute("""
-            UPDATE products SET user_subcategory = ?
-            WHERE original_name = ?
-        """, (subcategory, product_name))
+            UPDATE products 
+            SET user_subcategory = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE original_name = ? AND COALESCE(user_category, auto_category) = ?
+        """, (subcategory, product_name, subcat_row['category_name']))
         updated_count = cursor.rowcount
+        
+        # Persist as override for future imports
+        upsert_product_override(
+            product_name_pattern=product_name,
+            category_id=subcat_row['category_id'],
+            subcategory_id=subcat_row['subcategory_id'],
+            match_type="exact",
+            source="user",
+            confidence=1.0,
+            conn=conn
+        )
     else:
         cursor.execute("""
-            UPDATE products SET user_subcategory = ?
+            UPDATE products SET user_subcategory = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         """, (subcategory, product_id))
         updated_count = cursor.rowcount
@@ -1423,3 +1879,280 @@ if __name__ == "__main__":
     print("\nReparsing all invoices with improved parser...")
     reparse_all_invoices()
 
+
+def get_budget_candidates(reference_year: int, limit: int = 50) -> List[Dict]:
+    """Get candidate products for budgeting based on reference year spending"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT 
+            p.original_name as product_name,
+            COALESCE(p.user_category, p.auto_category) as category,
+            SUM(p.quantity) as annual_quantity,
+            SUM(p.price) as annual_cost,
+            COUNT(DISTINCT i.id) as frequency
+        FROM products p
+        JOIN invoices i ON p.invoice_id = i.id
+        WHERE strftime('%Y', i.invoice_date) = ?
+        GROUP BY p.original_name
+        ORDER BY annual_cost DESC
+        LIMIT ?
+    """, (str(reference_year), limit))
+    
+    candidates = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return candidates
+
+
+def save_budget_goal(goal_data: Dict) -> int:
+    """Save or update a budget goal"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        INSERT INTO budget_goals (
+            product_name, reference_year, target_year,
+            reference_quantity, reference_total_cost,
+            target_quantity, moscow_label, status, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(product_name, target_year) DO UPDATE SET
+            target_quantity = excluded.target_quantity,
+            moscow_label = excluded.moscow_label,
+            status = excluded.status,
+            updated_at = CURRENT_TIMESTAMP
+    """, (
+        goal_data['product_name'],
+        goal_data['reference_year'],
+        goal_data['target_year'],
+        goal_data.get('reference_quantity', 0),
+        goal_data.get('reference_total_cost', 0),
+        goal_data.get('target_quantity'),
+        goal_data.get('moscow_label'),
+        goal_data.get('status', 'active')
+    ))
+    
+    goal_id = cursor.lastrowid
+    if not goal_id:  # On update, lastrowid might be 0/None depending on driver
+        cursor.execute("SELECT id FROM budget_goals WHERE product_name = ? AND target_year = ?", 
+                      (goal_data['product_name'], goal_data['target_year']))
+        row = cursor.fetchone()
+        if row:
+            goal_id = row['id']
+            
+    conn.commit()
+    conn.close()
+    return goal_id
+
+
+def get_budget_goals(target_year: int) -> List[Dict]:
+    """Get all budget goals for a target year"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT * FROM budget_goals 
+        WHERE target_year = ? AND status = 'active'
+        ORDER BY reference_total_cost DESC
+    """, (target_year,))
+    
+    goals = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return goals
+
+def get_budget_tradeoff(reference_year: int) -> Dict:
+    """Get a pair of products for 'Sophie's Choice' trade-off"""
+    import random
+    
+    candidates = get_budget_candidates(reference_year, limit=50)
+    if len(candidates) < 2:
+        return {"error": "Not enough products for tradeoff"}
+        
+    # Pick two distinct products, preferably weighted by cost
+    # For now, simple random choice from top 50
+    p1, p2 = random.sample(candidates, 2)
+    
+    return {
+        "product_a": p1,
+        "product_b": p2,
+        "scenario": "Als je moest kiezen..."
+    }
+
+def get_budget_summary(target_year: int) -> Dict:
+    """Calculate total budget impact including 30-year projection"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Get all active goals
+    cursor.execute("""
+        SELECT 
+            product_name,
+            reference_quantity,
+            reference_total_cost,
+            target_quantity,
+            moscow_label
+        FROM budget_goals
+        WHERE target_year = ? AND status = 'active'
+    """, (target_year,))
+    
+    goals = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    total_ref_cost = 0
+    total_target_cost = 0
+    total_items = len(goals)
+    
+    # Calculate totals
+    for g in goals:
+        if g['reference_quantity'] and g['reference_quantity'] > 0:
+            unit_price = g['reference_total_cost'] / g['reference_quantity']
+            target_quantity = g['target_quantity'] if g['target_quantity'] is not None else g['reference_quantity']
+            
+            projected_cost = target_quantity * unit_price
+            
+            total_ref_cost += g['reference_total_cost']
+            total_target_cost += projected_cost
+            
+    annual_savings = total_ref_cost - total_target_cost
+    
+    # Wealth Projection: Future Value of an Annuity
+    # Formula: PMT * ((1 + r)^n - 1) / r
+    # r = 0.07 (7% return), n = 30 years
+    r = 0.07
+    n = 30
+    compound_factor = ((1 + r) ** n - 1) / r  # approx 94.46
+    wealth_30y = annual_savings * compound_factor
+    
+    return {
+        "target_year": target_year,
+        "total_items_budgeted": total_items,
+        "annual_reference_cost": round(total_ref_cost, 2),
+        "annual_projected_cost": round(total_target_cost, 2),
+        "annual_savings": round(annual_savings, 2),
+        "wealth_30y": round(wealth_30y, 2),
+        "compound_factor": round(compound_factor, 2)
+    }
+
+
+def get_day_of_week_analysis(year: str = None) -> Dict:
+    """Analyseer uitgaven per dag van de week"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    year_filter = f"AND strftime('%Y', i.invoice_date) = '{year}'" if year else ""
+
+    cursor.execute(f"""
+        SELECT
+            CASE cast(strftime('%w', i.invoice_date) as integer)
+                WHEN 0 THEN 'Zondag'
+                WHEN 1 THEN 'Maandag'
+                WHEN 2 THEN 'Dinsdag'
+                WHEN 3 THEN 'Woensdag'
+                WHEN 4 THEN 'Donderdag'
+                WHEN 5 THEN 'Vrijdag'
+                WHEN 6 THEN 'Zaterdag'
+            END as day_name,
+            cast(strftime('%w', i.invoice_date) as integer) as day_num,
+            COUNT(DISTINCT i.id) as invoice_count,
+            SUM(i.total_amount) as total_spent,
+            AVG(i.total_amount) as avg_per_visit,
+            COUNT(DISTINCT i.invoice_date) as unique_dates
+        FROM invoices i
+        WHERE i.total_amount > 0 {year_filter}
+        GROUP BY day_name, day_num
+        ORDER BY day_num
+    """)
+
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    # Calculate insights
+    if results:
+        max_spending_day = max(results, key=lambda x: x['total_spent'])
+        min_spending_day = min(results, key=lambda x: x['total_spent'])
+
+        return {
+            "by_day": results,
+            "insights": {
+                "max_spending_day": max_spending_day['day_name'],
+                "max_spending_amount": round(max_spending_day['total_spent'], 2),
+                "min_spending_day": min_spending_day['day_name'],
+                "min_spending_amount": round(min_spending_day['total_spent'], 2)
+            }
+        }
+
+    return {"by_day": [], "insights": {}}
+
+
+def get_bonus_analysis(year: str = None) -> Dict:
+    """Analyseer totale Bonus-korting"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    year_filter = f"AND strftime('%Y', i.invoice_date) = '{year}'" if year else ""
+
+    cursor.execute(f"""
+        SELECT
+            SUM(CASE WHEN p.original_name LIKE '%Bonus%' OR p.original_name LIKE '%bonus%'
+                THEN ABS(p.price) ELSE 0 END) as total_bonus,
+            COUNT(DISTINCT CASE WHEN p.original_name LIKE '%Bonus%' OR p.original_name LIKE '%bonus%'
+                THEN i.id END) as invoices_with_bonus,
+            COUNT(CASE WHEN p.original_name LIKE '%Bonus%' OR p.original_name LIKE '%bonus%'
+                THEN 1 END) as bonus_items
+        FROM products p
+        JOIN invoices i ON p.invoice_id = i.id
+        WHERE 1=1 {year_filter}
+    """)
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        return {
+            "total_bonus_savings": round(abs(row['total_bonus'] or 0), 2),
+            "invoices_with_bonus": row['invoices_with_bonus'] or 0,
+            "bonus_items_count": row['bonus_items'] or 0
+        }
+
+    return {"total_bonus_savings": 0, "invoices_with_bonus": 0, "bonus_items_count": 0}
+
+
+def get_spending_prediction(year: str = None) -> Dict:
+    """Voorspel totale maanduitgaven op basis van historisch gedrag"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Get current year if not specified
+    if not year:
+        cursor.execute("SELECT strftime('%Y', MAX(invoice_date)) FROM invoices")
+        year = cursor.fetchone()[0]
+
+    # Get spending per month for the year
+    cursor.execute("""
+        SELECT
+            strftime('%m', invoice_date) as month,
+            SUM(total_amount) as month_total
+        FROM invoices
+        WHERE strftime('%Y', invoice_date) = ?
+        GROUP BY month
+        ORDER BY month
+    """, (year,))
+
+    monthly_data = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    if not monthly_data:
+        return {"predicted_monthly": 0, "predicted_yearly": 0, "months_with_data": 0}
+
+    # Calculate average from available months
+    total = sum(m['month_total'] for m in monthly_data)
+    months_count = len(monthly_data)
+    avg_monthly = total / months_count if months_count > 0 else 0
+    predicted_yearly = avg_monthly * 12
+
+    return {
+        "predicted_monthly": round(avg_monthly, 2),
+        "predicted_yearly": round(predicted_yearly, 2),
+        "months_with_data": months_count,
+        "year": year
+    }

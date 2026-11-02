@@ -303,6 +303,7 @@
                 </a>
                 <nav class="ah-nav">
                     <a href="/">Dashboard</a>
+                    <a href="/budget">Budget</a>
                     <a href="/search">Producten</a>
                     <a href="/invoices">Facturen</a>
                     <a href="/categories">Categorieën</a>
@@ -335,22 +336,22 @@
         let analysisData = null;
         let selectedYear = null;
         
-        const categoryColors = {
-            'Zuivel & Eieren': '#00ADE6',
-            'Groente & Fruit': '#5CB82F',
-            'Vlees & Vis': '#E13A3A',
-            'Brood & Bakkerij': '#D4A574',
-            'Pasta, Rijst & Granen': '#FFB347',
-            'Dranken': '#4FC3F7',
-            'Sauzen & Specerijen': '#FF7043',
-            'Snacks & Zoetwaren': '#AB47BC',
-            'Huishouden': '#78909C',
-            'Persoonlijke Verzorging': '#F48FB1',
-            'Verpakking & Statiegeld': '#90A4AE',
-            'Bezorgkosten': '#607D8B',
-            'Abonnementen': '#9C27B0',
-            'Overig': '#9E9E9E'
-        };
+        // Category colors loaded dynamically from API
+        let categoryColors = {};
+        let categoryIcons = {};
+        
+        async function loadCategoryMetadata() {
+            try {
+                const resp = await fetch('/api/categories');
+                const categories = await resp.json();
+                categories.forEach(cat => {
+                    categoryColors[cat.name] = cat.color || '#9E9E9E';
+                    categoryIcons[cat.name] = cat.icon || '📋';
+                });
+            } catch (e) {
+                console.error('Failed to load category metadata:', e);
+            }
+        }
         
         function formatCurrency(amount) {
             return new Intl.NumberFormat('nl-NL', {
@@ -750,7 +751,11 @@
             });
         }
         
-        loadData();
+        // Initialize: load category metadata first, then data
+        (async () => {
+            await loadCategoryMetadata();
+            loadData();
+        })();
     </script>
 </body>
 </html>

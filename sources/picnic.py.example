@@ -1,0 +1,107 @@
+"""
+Picnic Grocery Delivery Source (Example/Template).
+This is a template for integrating Picnic as a data source.
+
+To activate:
+1. Rename this file to picnic.py
+2. Configure Picnic credentials in .env
+3. The source will auto-register when the app starts
+
+Note: You already have access to Picnic via MCP tools:
+- mcp_picnic_picnic_get_deliveries: Get order history
+- mcp_picnic_picnic_get_delivery: Get order details
+"""
+
+import asyncio
+from datetime import datetime
+from typing import List, Optional
+
+from sources.base import ReceiptSource, ParsedReceipt, ParsedProduct
+
+
+class PicnicSource(ReceiptSource):
+    """Parser for Picnic grocery delivery orders."""
+    
+    @property
+    def name(self) -> str:
+        return "picnic"
+    
+    @property
+    def display_name(self) -> str:
+        return "Picnic"
+    
+    @property
+    def icon(self) -> str:
+        return "🚚"
+    
+    @property
+    def color(self) -> str:
+        return "#E60023"  # Picnic Red
+    
+    def can_parse(self, filepath: str) -> bool:
+        """Picnic is API-based, not file-based."""
+        return False
+    
+    def parse(self, filepath: str) -> ParsedReceipt:
+        """Not applicable for API-based sources."""
+        raise NotImplementedError("Picnic uses API-based fetching, not file parsing")
+    
+    def supports_api(self) -> bool:
+        return True
+    
+    async def fetch_from_api(self, limit: int = 10, **kwargs) -> List[ParsedReceipt]:
+        """
+        Fetch recent Picnic orders via MCP.
+        
+        This is a template - actual implementation would use the MCP tools:
+        - mcp_picnic_picnic_get_deliveries
+        - mcp_picnic_picnic_get_delivery
+        """
+        receipts = []
+        
+        # Example structure - replace with actual MCP calls
+        # deliveries = await mcp_picnic_picnic_get_deliveries(limit=limit)
+        # 
+        # for delivery in deliveries:
+        #     detail = await mcp_picnic_picnic_get_delivery(deliveryId=delivery['id'])
+        #     
+        #     products = []
+        #     for item in detail.get('items', []):
+        #         products.append(ParsedProduct(
+        #             name=item['name'],
+        #             price=item['price'] / 100,  # Picnic uses cents
+        #             quantity=item['quantity'],
+        #             category=self._categorize(item['name'])
+        #         ))
+        #     
+        #     receipts.append(ParsedReceipt(
+        #         file_hash=f"picnic_{delivery['id']}",
+        #         filename=f"Picnic Order {delivery['id']}",
+        #         source_type=self.name,
+        #         date=datetime.fromisoformat(delivery['delivery_time']),
+        #         invoice_number=delivery['id'],
+        #         external_id=delivery['id'],
+        #         total_amount=sum(p.price for p in products),
+        #         products=products
+        #     ))
+        
+        return receipts
+    
+    def _categorize(self, name: str) -> str:
+        """Categorize using the shared service."""
+        try:
+            from services.categorization import get_categorization_service
+            service = get_categorization_service()
+            result = service.categorize(name)
+            return result['category']
+        except:
+            return "Overig"
+
+
+# To activate, uncomment the following and rename this file to picnic.py:
+# 
+# from sources.registry import get_registry
+# get_registry().register(PicnicSource())
+"""
+
+

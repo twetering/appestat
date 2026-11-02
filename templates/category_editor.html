@@ -120,6 +120,41 @@
         .btn-success { background: var(--ah-green); color: var(--white); }
         .btn-danger { background: var(--ah-red); color: var(--white); }
         .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+
+        .confirm-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+        }
+
+        .confirm-modal {
+            background: var(--white);
+            border-radius: 14px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 420px;
+            padding: 1.25rem;
+        }
+
+        .confirm-modal h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .confirm-modal p {
+            margin: 0 0 1rem;
+            color: var(--gray-600);
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
         
         /* Category grid */
         .category-grid {
@@ -315,6 +350,7 @@
                 </a>
                 <nav class="ah-nav">
                     <a href="/">Dashboard</a>
+                    <a href="/budget">Budget</a>
                     <a href="/search">Producten</a>
                     <a href="/invoices">Facturen</a>
                     <a href="/categories" class="active">Categorieën</a>
@@ -367,17 +403,28 @@
     
     <script>
         let categories = [];
-        let keywords = {};
+        let keywordsByCategory = {};
+        let keywordsList = [];
         
         async function loadData() {
             try {
                 const [categoriesRes, keywordsRes] = await Promise.all([
                     fetch('/api/categories'),
-                    fetch('/api/categories/keywords')
+                    fetch('/api/categorization/keywords')
                 ]);
                 
-                categories = await categoriesRes.json();
-                keywords = await keywordsRes.json();
+                categories = await safeJson(categoriesRes);
+                if (!categoriesRes.ok) throw new Error(categories.error || 'Categorieën laden mislukt');
+                keywordsList = await safeJson(keywordsRes);
+                if (!keywordsRes.ok) throw new Error(keywordsList.error || 'Keywords laden mislukt');
+                
+                keywordsByCategory = {};
+                keywordsList.forEach(kw => {
+                    if (!keywordsByCategory[kw.category_name]) {
+                        keywordsByCategory[kw.category_name] = [];
+                    }
+                    keywordsByCategory[kw.category_name].push(kw);
+                });
                 
                 renderCategories();
             } catch (error) {
@@ -390,7 +437,7 @@
             const container = document.getElementById('categories-container');
             
             container.innerHTML = categories.map(cat => {
-                const catKeywords = keywords[cat.name] || [];
+                const catKeywords = keywordsByCategory[cat.name] || [];
                 const subcats = getSubcategories(cat.name);
                 
                 return `
@@ -409,8 +456,8 @@
                             <div class="keywords-list" id="keywords-${cat.id}">
                                 ${catKeywords.map(kw => `
                                     <span class="keyword-tag">
-                                        ${kw}
-                                        <button class="keyword-remove" onclick="removeKeyword('${cat.name}', '${escapeJs(kw)}')" 
+                                        ${kw.keyword}
+                                        <button class="keyword-remove" onclick="removeKeyword(${kw.id})" 
                                                 title="Verwijder keyword">×</button>
                                     </span>
                                 `).join('')}
@@ -460,42 +507,46 @@
             if (!keyword) return;
             
             try {
-                const response = await fetch('/api/categories/keywords', {
+                const response = await fetch('/api/categorization/keywords', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ category: categoryName, keyword: keyword })
                 });
                 
+                const result = await safeJson(response);
                 if (response.ok) {
                     input.value = '';
                     showToast(`Keyword "${keyword}" toegevoegd aan ${categoryName}`);
                     loadData(); // Reload
                 } else {
-                    const err = await response.json();
-                    showToast(err.error || 'Fout bij toevoegen', 'error');
+                    showToast(result.error || 'Fout bij toevoegen', 'error');
                 }
             } catch (error) {
                 showToast('Fout: ' + error.message, 'error');
             }
         }
         
-        async function removeKeyword(categoryName, keyword) {
-            if (!confirm(`Weet je zeker dat je "${keyword}" wilt verwijderen uit ${categoryName}?`)) {
-                return;
-            }
+        async function removeKeyword(keywordId) {
+            const confirmed = await confirmAction({
+                title: 'Keyword verwijderen',
+                message: 'Weet je zeker dat je dit keyword wilt verwijderen?',
+                confirmText: 'Verwijderen',
+                cancelText: 'Annuleren',
+                danger: true
+            });
+            if (!confirmed) return;
             
             try {
-                const response = await fetch('/api/categories/keywords', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ category: categoryName, keyword: keyword })
+                const response = await fetch(`/api/categorization/keywords/${keywordId}`, {
+                    method: 'DELETE'
                 });
                 
+                const result = await safeJson(response);
                 if (response.ok) {
-                    showToast(`Keyword "${keyword}" verwijderd`);
+                    showToast('Keyword verwijderd');
                     loadData();
                 } else {
-                    showToast('Fout bij verwijderen', 'error');
+                    showToast(result.error || 'Fout bij verwijderen', 'error');
                 }
             } catch (error) {
                 showToast('Fout: ' + error.message, 'error');
@@ -503,15 +554,19 @@
         }
         
         async function applyKeywordChanges() {
-            if (!confirm('Dit past de keyword-regels toe op ALLE producten. Producten worden opnieuw gecategoriseerd. Doorgaan?')) {
-                return;
-            }
+            const confirmed = await confirmAction({
+                title: 'Keyword-regels toepassen',
+                message: 'Dit past de keyword‑regels toe op ALLE producten. Producten worden opnieuw gecategoriseerd.',
+                confirmText: 'Toepassen',
+                cancelText: 'Annuleren'
+            });
+            if (!confirmed) return;
             
             showToast('Wijzigingen worden toegepast...', 'info');
             
             try {
                 const response = await fetch('/api/migrate', { method: 'POST' });
-                const result = await response.json();
+                const result = await safeJson(response);
                 
                 if (response.ok) {
                     showToast(`${result.recategorized} producten opnieuw gecategoriseerd`);
@@ -538,12 +593,12 @@
                     body: JSON.stringify({ name, icon, color })
                 });
                 
+                const result = await safeJson(response);
                 if (response.ok) {
                     showToast(`Categorie "${name}" aangemaakt`);
                     loadData();
                 } else {
-                    const err = await response.json();
-                    showToast(err.error || 'Fout bij aanmaken', 'error');
+                    showToast(result.error || 'Fout bij aanmaken', 'error');
                 }
             } catch (error) {
                 showToast('Fout: ' + error.message, 'error');
@@ -551,7 +606,7 @@
         }
         
         function exportKeywords() {
-            const dataStr = JSON.stringify(keywords, null, 2);
+            const dataStr = JSON.stringify(keywordsByCategory, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
@@ -566,6 +621,48 @@
         
         function escapeJs(text) {
             return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        async function safeJson(response) {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                const preview = text.slice(0, 120).replace(/\s+/g, ' ');
+                throw new Error(`Serverfout (${response.status}): ${preview || 'onleesbare response'}`);
+            }
+        }
+
+        function confirmAction({ title, message, confirmText = 'Bevestigen', cancelText = 'Annuleren', danger = false }) {
+            return new Promise((resolve) => {
+                const backdrop = document.createElement('div');
+                backdrop.className = 'confirm-backdrop';
+                backdrop.innerHTML = `
+                    <div class="confirm-modal">
+                        <h3>${title}</h3>
+                        <p>${message}</p>
+                        <div class="confirm-actions">
+                            <button class="btn btn-secondary" id="confirm-cancel">${cancelText}</button>
+                            <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="confirm-ok">${confirmText}</button>
+                        </div>
+                    </div>
+                `;
+                backdrop.onclick = (e) => {
+                    if (e.target === backdrop) {
+                        backdrop.remove();
+                        resolve(false);
+                    }
+                };
+                document.body.appendChild(backdrop);
+                backdrop.querySelector('#confirm-cancel').onclick = () => {
+                    backdrop.remove();
+                    resolve(false);
+                };
+                backdrop.querySelector('#confirm-ok').onclick = () => {
+                    backdrop.remove();
+                    resolve(true);
+                };
+            });
         }
         
         function showToast(message, type = 'success') {
@@ -584,4 +681,3 @@
     </script>
 </body>
 </html>
-

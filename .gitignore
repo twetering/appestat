@@ -16,3 +16,6 @@ data/*.db
 
 # OS
 .DS_Store
+
+# Local caches (compiled OCR helper, OCR results of receipt photos)
+data/cache/

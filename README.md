@@ -7,6 +7,7 @@ Deze applicatie geeft je diepgaand inzicht in je uitgaven, helpt je patronen her
 ![Appestat](https://img.shields.io/badge/Appestat-Food%20Regulator-00ADE6)
 ![Python](https://img.shields.io/badge/Python-3.9+-blue)
 ![Privacy](https://img.shields.io/badge/Privacy-Local%20Only-green)
+![AI Native](https://img.shields.io/badge/AI%20Native-Agent%20Ready-purple)
 
 ## ✨ Kenmerken
 
@@ -23,8 +24,14 @@ Deze applicatie geeft je diepgaand inzicht in je uitgaven, helpt je patronen her
 
 ### 🛠️ Technische Kracht
 - **PDF & Bonnen Import**: Verwerkt automatisch je Albert Heijn facturen en kassabonnen.
-- **Slimme Categorisatie**: Herkent automatisch honderden producten en deelt ze in (Zuivel, Groente, Snacks, etc.).
+- **Slimme Categorisatie**: 3-tier systeem met keywords, user overrides, en LLM fallback.
+- **AI-Powered**: Optionele OpenAI integratie voor intelligente categorisatie van onbekende producten.
 - **Privacy First**: Alle data blijft 100% lokaal op je eigen computer. Geen cloud, geen tracking.
+
+### 🤖 AI Agent Native
+- Uitgebreide API voor AI-agents (zie `API.md`)
+- Gedocumenteerd voor Claude, GPT, en andere AI-assistenten (zie `CLAUDE.md`)
+- Complete user stories en requirements (zie `REQUIREMENTS.md`)
 
 ---
 
@@ -49,7 +56,14 @@ Je kunt Appestat lokaal draaien:
    pip install -r requirements.txt
    ```
 
-3. **Starten**
+3. **OpenAI Configuratie** (optioneel, voor AI-categorisatie)
+   ```bash
+   # Maak een .env bestand
+   echo "OPENAI_API_KEY=sk-your-api-key-here" > .env
+   ```
+   Haal je API key op via [platform.openai.com](https://platform.openai.com/api-keys)
+
+4. **Starten**
    ```bash
    python app.py
    ```

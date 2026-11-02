@@ -357,6 +357,98 @@
             text-decoration: none;
             font-size: 0.875rem;
         }
+
+        .ah-api-card {
+            background: linear-gradient(135deg, #00ADE6 0%, #0095C8 100%);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .ah-api-card.connected {
+            background: linear-gradient(135deg, #5CB82F 0%, #4a9e26 100%);
+        }
+
+        .ah-api-icon {
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .ah-api-info { flex: 1; min-width: 200px; }
+        .ah-api-info h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .ah-api-info p { font-size: 0.85rem; opacity: 0.9; margin: 0; }
+
+        .ah-api-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+
+        .btn-white {
+            background: white;
+            color: var(--ah-blue);
+            font-weight: 700;
+        }
+        .btn-white:hover { background: var(--gray-100); }
+        .btn-white-outline {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.7);
+            font-weight: 600;
+        }
+        .btn-white-outline:hover { background: rgba(255,255,255,0.15); }
+
+        .ah-connect-form {
+            display: none;
+            background: white;
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-top: 1rem;
+            color: var(--gray-900);
+        }
+
+        .ah-connect-form.visible { display: block; }
+
+        .ah-connect-form ol {
+            margin: 0.5rem 0 1rem 1.2rem;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .ah-connect-form input[type="text"] {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .ah-connect-form input[type="text"]:focus {
+            outline: none;
+            border-color: var(--ah-blue);
+            box-shadow: 0 0 0 3px rgba(0,173,230,0.15);
+        }
+
+        .sync-log {
+            background: var(--gray-900);
+            color: #a8ff78;
+            font-family: monospace;
+            font-size: 0.8rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 0.75rem;
+            display: none;
+        }
+
+        .sync-log.visible { display: block; }
+        .sync-log .log-line { margin: 0.2rem 0; }
+        .sync-log .log-error { color: #ff6b6b; }
+        .sync-log .log-success { color: #a8ff78; }
+        .sync-log .log-info { color: #74b9ff; }
     </style>
 </head>
 <body>
@@ -375,6 +467,7 @@
                 </a>
                 <nav class="ah-nav">
                     <a href="/">Dashboard</a>
+                    <a href="/budget">Budget</a>
                     <a href="/search">Producten</a>
                     <a href="/invoices" class="active">Facturen</a>
                     <a href="/categories">Categorieën</a>
@@ -394,8 +487,11 @@
                 </div>
             </div>
             
+            <!-- AH API koppeling -->
+            <div id="ah-api-section"></div>
+
             <div id="import-status"></div>
-            
+
             <div id="app">
                 <div class="loading">
                     <div class="loading-spinner"></div>
@@ -610,6 +706,160 @@
         }
         
         loadInvoices();
+        loadAhApiStatus();
+
+        // ============ AH API koppeling ============
+
+        async function loadAhApiStatus() {
+            try {
+                const res = await fetch('/api/ah/auth/status');
+                const data = await res.json();
+                renderAhApiSection(data.authenticated);
+            } catch {
+                renderAhApiSection(false);
+            }
+        }
+
+        function renderAhApiSection(isConnected) {
+            const section = document.getElementById('ah-api-section');
+            if (isConnected) {
+                section.innerHTML = `
+                    <div class="ah-api-card connected">
+                        <div class="ah-api-icon">✅</div>
+                        <div class="ah-api-info">
+                            <h3>Albert Heijn Account Gekoppeld</h3>
+                            <p>Je bonnen worden automatisch ingelezen via de AH API — geen PDF's meer nodig.</p>
+                        </div>
+                        <div class="ah-api-actions">
+                            <button class="btn btn-white" onclick="startSync(false)">🔄 Nieuwe bonnen synchroniseren</button>
+                            <button class="btn btn-white-outline" onclick="startSync(true)">↩ Alles opnieuw synchroniseren</button>
+                            <button class="btn btn-white-outline" onclick="disconnectAh()" style="opacity:0.7">🔌 Ontkoppelen</button>
+                        </div>
+                    </div>
+                    <div class="sync-log" id="sync-log"></div>
+                `;
+            } else {
+                section.innerHTML = `
+                    <div class="ah-api-card">
+                        <div class="ah-api-icon">🛒</div>
+                        <div class="ah-api-info">
+                            <h3>Koppel je Albert Heijn Account</h3>
+                            <p>Haal je bonnen automatisch op via de AH API — geen handmatige PDF's meer.</p>
+                        </div>
+                        <div class="ah-api-actions">
+                            <button class="btn btn-white" onclick="toggleConnectForm()">🔗 Account koppelen</button>
+                        </div>
+                    </div>
+                    <div class="ah-connect-form" id="ah-connect-form">
+                        <strong>Hoe koppelen?</strong>
+                        <ol>
+                            <li>Klik op de knop hieronder — er opent een nieuw tabblad met de AH-loginpagina</li>
+                            <li>Log in met je AH-account (e-mail + wachtwoord)</li>
+                            <li>Na het inloggen <strong>blijft de browser "laden"</strong> of toont een foutpagina — dat is normaal</li>
+                            <li>Kijk in de <strong>adresbalk</strong>: die verandert naar iets als <code>appie://login-exit?code=...</code></li>
+                            <li>Kopieer die volledige URL en plak die hieronder</li>
+                        </ol>
+                        <details style="font-size:0.82rem;color:var(--gray-600);margin-bottom:0.75rem;">
+                            <summary style="cursor:pointer;">Adresbalk verandert niet? Probeer dit</summary>
+                            <div style="padding:0.5rem 0 0 0.5rem;">
+                                Open DevTools (F12) → tabblad <strong>Network</strong> → log opnieuw in → zoek een request naar <code>login-exit</code> en kopieer de redirect-URL uit de <em>Location</em> header.
+                            </div>
+                        </details>
+                        <a id="ah-login-link" href="#" target="_blank" class="btn btn-primary btn-sm" style="margin-bottom:0.75rem;" onclick="openAuthUrl(event)">
+                            🔐 Inloggen bij Albert Heijn
+                        </a>
+                        <div>
+                            <label style="font-size:0.85rem;font-weight:600;">Plak hier de redirect-URL:</label>
+                            <input type="text" id="ah-code-input" placeholder="appie://login-exit?code=..." />
+                        </div>
+                        <div style="margin-top:0.75rem;display:flex;gap:0.5rem;">
+                            <button class="btn btn-primary btn-sm" onclick="submitCode()">Koppelen</button>
+                            <button class="btn btn-secondary btn-sm" onclick="toggleConnectForm()">Annuleren</button>
+                        </div>
+                        <div id="connect-error" style="color:var(--ah-red);font-size:0.85rem;margin-top:0.5rem;"></div>
+                    </div>
+                `;
+            }
+        }
+
+        async function openAuthUrl(e) {
+            e.preventDefault();
+            const res = await fetch('/api/ah/auth/url');
+            const data = await res.json();
+            window.open(data.url, '_blank');
+        }
+
+        function toggleConnectForm() {
+            const form = document.getElementById('ah-connect-form');
+            form.classList.toggle('visible');
+        }
+
+        async function submitCode() {
+            const input = document.getElementById('ah-code-input');
+            const errDiv = document.getElementById('connect-error');
+            const code = input.value.trim();
+            if (!code) { errDiv.textContent = 'Plak eerst de redirect-URL.'; return; }
+            errDiv.textContent = '';
+
+            try {
+                const res = await fetch('/api/ah/auth/exchange', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Onbekende fout');
+                await loadAhApiStatus();
+            } catch (err) {
+                errDiv.textContent = `Fout: ${err.message}`;
+            }
+        }
+
+        async function disconnectAh() {
+            if (!confirm('Weet je zeker dat je het AH account wilt ontkoppelen?')) return;
+            await fetch('/api/ah/auth', { method: 'DELETE' });
+            loadAhApiStatus();
+        }
+
+        async function startSync(fullSync) {
+            const log = document.getElementById('sync-log');
+            log.classList.add('visible');
+            log.innerHTML = '<div class="log-line log-info">⏳ Synchroniseren gestart...</div>';
+
+            try {
+                const res = await fetch('/api/ah/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ full_sync: fullSync, batch_size: 50 }),
+                });
+                const data = await res.json();
+
+                let html = '';
+                if (data.synced > 0) {
+                    html += `<div class="log-line log-success">✅ ${data.synced} nieuwe bonnen gesynchroniseerd</div>`;
+                    data.details.slice(0, 10).forEach(r => {
+                        html += `<div class="log-line log-info">  📄 ${r.date?.split('T')[0]} — €${r.total?.toFixed(2)} (${r.products} producten)</div>`;
+                    });
+                    if (data.details.length > 10) html += `<div class="log-line log-info">  ... en ${data.details.length - 10} meer</div>`;
+                }
+                if (data.skipped > 0) {
+                    html += `<div class="log-line log-info">⏭ ${data.skipped} bonnen al aanwezig, overgeslagen</div>`;
+                }
+                if (data.errors?.length) {
+                    data.errors.forEach(e => {
+                        html += `<div class="log-line log-error">❌ ${e.error || JSON.stringify(e)}</div>`;
+                    });
+                }
+                if (data.synced === 0 && !data.errors?.length) {
+                    html += `<div class="log-line log-info">ℹ️ Geen nieuwe bonnen gevonden</div>`;
+                }
+                log.innerHTML = html;
+
+                if (data.synced > 0) loadInvoices();
+            } catch (err) {
+                log.innerHTML = `<div class="log-line log-error">❌ Sync mislukt: ${err.message}</div>`;
+            }
+        }
     </script>
 </body>
 </html>

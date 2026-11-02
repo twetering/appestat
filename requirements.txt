@@ -1,5 +1,30 @@
+# Appestat - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Web Framework
 flask>=3.0.0
-pdfplumber>=0.10.3
-pandas>=2.2.2
-python-dateutil>=2.8.2
+
+# PDF Processing
+pdfplumber>=0.10.0
+pdfminer-six>=20230101
+
+# Data Analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Date/Time handling
+python-dateutil>=2.8.0
+pytz>=2023.3
+
+# OpenAI Integration (for LLM categorization)
+openai>=1.0.0
+
+# HTTP client (AH API integration)
+httpx>=0.27.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Image Processing (for future OCR support)
+pillow>=10.0.0
 

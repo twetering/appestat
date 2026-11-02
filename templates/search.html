@@ -378,6 +378,7 @@
                 </a>
                 <nav class="ah-nav">
                     <a href="/">Dashboard</a>
+                    <a href="/budget">Budget</a>
                     <a href="/search" class="active">Producten</a>
                     <a href="/invoices">Facturen</a>
                     <a href="/categories">Categorieën</a>
@@ -475,22 +476,9 @@
         let categories = [];
         let subcategories = {};  // Subcats per category
         
-        const categoryColors = {
-            'Zuivel & Eieren': '#00ADE6',
-            'Groente & Fruit': '#5CB82F',
-            'Vlees & Vis': '#E13A3A',
-            'Brood & Bakkerij': '#D4A574',
-            'Pasta, Rijst & Granen': '#FFB347',
-            'Dranken': '#4FC3F7',
-            'Sauzen & Specerijen': '#FF7043',
-            'Snacks & Zoetwaren': '#AB47BC',
-            'Huishouden': '#78909C',
-            'Persoonlijke Verzorging': '#F48FB1',
-            'Verpakking & Statiegeld': '#90A4AE',
-            'Bezorgkosten': '#607D8B',
-            'Abonnementen': '#9C27B0',
-            'Overig': '#9E9E9E'
-        };
+        // Category colors and icons loaded dynamically from API
+        let categoryColors = {};
+        let categoryIcons = {};
         
         function formatCurrency(amount) {
             return new Intl.NumberFormat('nl-NL', {
@@ -510,6 +498,12 @@
                 allProducts = await productsRes.json();
                 categories = await categoriesRes.json();
                 const subcatList = await subcatsRes.json();
+                
+                // Build category color/icon lookup from API data
+                categories.forEach(cat => {
+                    categoryColors[cat.name] = cat.color || '#9E9E9E';
+                    categoryIcons[cat.name] = cat.icon || '📋';
+                });
                 
                 // Organize subcategories by category
                 subcategories = {};
@@ -588,6 +582,34 @@
             
             renderProducts();
             updateStats();
+        }
+
+        function recalculateCategoryCounts() {
+            const counts = {};
+            allProducts.forEach(p => {
+                counts[p.category] = (counts[p.category] || 0) + 1;
+            });
+            categories.forEach(cat => {
+                cat.product_count = counts[cat.name] || 0;
+            });
+        }
+
+        function refreshCategoryFilters() {
+            const categoryFilter = document.getElementById('category-filter');
+            const bulkSelect = document.getElementById('bulk-category-select');
+            const currentFilter = categoryFilter.value;
+            const currentBulk = bulkSelect.value;
+            
+            categoryFilter.innerHTML = '<option value="">Alle categorieën</option>';
+            bulkSelect.innerHTML = '<option value="">Kies categorie...</option>';
+            
+            categories.forEach(cat => {
+                categoryFilter.innerHTML += `<option value="${cat.name}">${cat.icon} ${cat.name} (${cat.product_count})</option>`;
+                bulkSelect.innerHTML += `<option value="${cat.name}">${cat.icon} ${cat.name}</option>`;
+            });
+            
+            categoryFilter.value = currentFilter;
+            bulkSelect.value = currentBulk;
         }
         
         function renderProducts() {
@@ -742,18 +764,29 @@
             const productNames = Array.from(selectedProducts);
             
             try {
-                for (const name of productNames) {
-                    await fetch('/api/products/bulk-update', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ product_name: name, category: category })
-                    });
+                const response = await fetch('/api/products/bulk-update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_names: productNames, category: category })
+                });
+                
+                const data = await safeJson(response);
+                if (!response.ok) {
+                    throw new Error(data.error || 'Bulk update mislukt');
                 }
                 
                 alert(`${productNames.length} producten bijgewerkt naar "${category}"`);
                 
-                // Reload data
-                await loadData();
+                // Update local data without resetting filters
+                allProducts.forEach(p => {
+                    if (selectedProducts.has(p.name)) {
+                        p.category = category;
+                        p.subcategory = null;
+                    }
+                });
+                recalculateCategoryCounts();
+                refreshCategoryFilters();
+                filterProducts();
                 clearSelection();
             } catch (error) {
                 alert('Fout bij bijwerken: ' + error.message);
@@ -762,8 +795,14 @@
         
         async function bulkUpdateSubcategory() {
             const subcategory = document.getElementById('bulk-subcategory-select').value;
+            const category = document.getElementById('bulk-category-select').value;
             if (!subcategory) {
                 alert('Selecteer eerst een subcategorie');
+                return;
+            }
+            
+            if (!category) {
+                alert('Selecteer eerst een categorie');
                 return;
             }
             
@@ -775,18 +814,26 @@
             const productNames = Array.from(selectedProducts);
             
             try {
-                for (const name of productNames) {
-                    await fetch('/api/products/bulk-update-subcategory', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ product_name: name, subcategory: subcategory })
-                    });
+                const response = await fetch('/api/products/bulk-update-subcategory', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_names: productNames, subcategory: subcategory, category: category })
+                });
+                
+                const data = await safeJson(response);
+                if (!response.ok) {
+                    throw new Error(data.error || 'Bulk update mislukt');
                 }
                 
                 alert(`${productNames.length} producten krijgen subcategorie "${subcategory}"`);
                 
-                // Reload data
-                await loadData();
+                // Update local data without resetting filters
+                allProducts.forEach(p => {
+                    if (selectedProducts.has(p.name) && p.category === category) {
+                        p.subcategory = subcategory;
+                    }
+                });
+                filterProducts();
                 clearSelection();
             } catch (error) {
                 alert('Fout bij bijwerken: ' + error.message);
@@ -801,6 +848,16 @@
         
         function escapeJs(text) {
             return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        async function safeJson(response) {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                const preview = text.slice(0, 120).replace(/\s+/g, ' ');
+                throw new Error(`Serverfout (${response.status}): ${preview || 'onleesbare response'}`);
+            }
         }
         
         async function showProductModal(productName) {
@@ -920,4 +977,3 @@
     </script>
 </body>
 </html>
-
