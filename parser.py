@@ -261,8 +261,10 @@ def parse_online_invoice(pdf_path: str) -> Optional[Dict]:
             if savings_match:
                 result['total_savings'] = float(savings_match.group(1).replace(",", "."))
             
-            result['products'] = extract_products_from_online_invoice(raw_text)
-            
+            # Invoices before 1 August 2022 use a different column layout
+            old_format = bool(result['invoice_date'] and result['invoice_date'] < datetime(2022, 8, 1))
+            result['products'] = extract_products_from_online_invoice(raw_text, old_format=old_format)
+
     except Exception as e:
         print(f"Error parsing online invoice {pdf_path}: {e}")
         return None
@@ -270,20 +272,25 @@ def parse_online_invoice(pdf_path: str) -> Optional[Dict]:
     return result
 
 
-def extract_products_from_online_invoice(text: str) -> List[Dict]:
+def extract_products_from_online_invoice(text: str, old_format: bool = False) -> List[Dict]:
     """
     Extract products from online invoice text.
     Format: PRODUCT NAME    QTY  BTW%   EXCL    BTW    INCL
+    Before 1 Aug 2022 (old_format): PRODUCT NAME    QTY  PER STUK  TOTAAL
     """
     products = []
     seen_products = set()
-    
-    # Pattern for product lines in AH invoices
-    product_pattern = re.compile(
-        r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)\s+(\d+)\s+(9%|21%|Geen)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$",
-        re.MULTILINE
-    )
-    
+
+    name_part = r"^([A-Z][A-Za-z0-9àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß'&\s\-\+\.%]+?)"
+    if old_format:
+        product_pattern = re.compile(name_part + r"\s+(\d+)\s+([\d,]+)\s+([\d,]+)$", re.MULTILINE)
+        btw_group, price_group = None, 4
+    else:
+        product_pattern = re.compile(
+            name_part + r"\s+(\d+)\s+(9%|21%|Geen)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)$", re.MULTILINE
+        )
+        btw_group, price_group = 3, 6
+
     skip_patterns = [
         "statiegeld", "retour", "klapkrat", "bezorgkosten", "verpakkingsmateriaal",
         "plastic verpakking", "koopzegels", "pagina ", "datum ", "factuurnummer",
@@ -294,8 +301,8 @@ def extract_products_from_online_invoice(text: str) -> List[Dict]:
     for match in product_pattern.finditer(text):
         original_name = match.group(1).strip()
         quantity = int(match.group(2))
-        btw = match.group(3)
-        price_incl = float(match.group(6).replace(",", "."))
+        btw = match.group(btw_group) if btw_group else None
+        price_incl = float(match.group(price_group).replace(",", "."))
         
         name_lower = original_name.lower()
         if any(skip in name_lower for skip in skip_patterns):
