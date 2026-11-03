@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Categorieën{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Categorieën</h1>
+        <p class="sub">Waar je geld naartoe gaat, en hoe producten worden ingedeeld</p>
+    </div>
+</div>
+<section class="card">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="tab-body"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/categories.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

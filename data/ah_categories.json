@@ -126,7 +126,9 @@
         {"name": "Pasta", "icon": "🍝", "keywords": ["pasta", "spaghetti", "penne", "fusilli", "tagliatelle", "lasagne bladen", "macaroni", "farfalle"]},
         {"name": "Rijst", "icon": "🍚", "keywords": ["rijst", "basmati", "jasmijn", "risotto", "zilvervlies", "wilde rijst"]},
         {"name": "Noodles & Aziatisch", "icon": "🍜", "keywords": ["noodles", "mie", "ramen", "udon", "soba", "woksaus", "ketjap", "sojasaus", "teriyaki"]},
-        {"name": "Wereldkeuken", "icon": "🌮", "keywords": ["couscous", "bulgur", "quinoa", "tortilla", "taco", "wraps", "currysaus", "kokosmelk", "sambal"]}
+        {"name": "Wereldkeuken", "icon": "🌮", "keywords": ["couscous", "bulgur", "quinoa", "tortilla", "taco", "wraps", "currysaus", "kokosmelk", "sambal"]},
+        {"name": "Bakken & meel", "icon": "🌾", "keywords": ["meel", "bloem", "tarwebloem", "speltmeel", "bakmix", "bakpoeder", "gist", "suiker", "basterdsuiker", "poedersuiker", "vanillesuiker", "agar"]},
+        {"name": "Peulvruchten & conserven", "icon": "🥫", "keywords": ["kikkererwten", "kidneybonen", "zwarte bonen", "linzen", "cannellini", "witte bonen", "bruine bonen", "mais", "tomatenblokjes", "gepelde tomaten"]}
       ],
       "keywords": ["pasta", "spaghetti", "rijst", "noodles", "couscous", "tortilla", "woksaus", "penne", "basmati", "quinoa"]
     },
@@ -172,6 +174,16 @@
         {"name": "Noten & Gedroogd fruit", "icon": "🥜", "keywords": ["studentenhaver", "noten mix", "gedroogd fruit", "rozijnen", "cranberry", "dadel", "vijg gedroogd"]}
       ],
       "keywords": ["mueslireep", "rijstwafel", "crackers", "studentenhaver", "gedroogd fruit", "rozijnen", "liga milkbreak"]
+    },
+    "Sport- & dieetvoeding": {
+      "icon": "💪",
+      "color": "#26A69A",
+      "subcategories": [
+        {"name": "Eiwitshakes & -poeder", "icon": "🥤", "keywords": ["whey", "protein shake", "eiwitshake", "eiwitpoeder", "protein poeder", "proteïne", "vegan protein", "protein drink"]},
+        {"name": "Eiwitrepen & -snacks", "icon": "🍫", "keywords": ["eiwitreep", "protein bar", "proteinereep", "protein bites", "high protein"]},
+        {"name": "Maaltijdvervangers", "icon": "🧃", "keywords": ["jimmy joy", "plenny", "huel", "maaltijdshake", "maaltijdvervanger", "yfood"]}
+      ],
+      "keywords": ["whey", "eiwit", "protein", "plenny", "jimmy joy", "huel"]
     },
     "Diepvries": {
       "icon": "❄️",
@@ -221,7 +233,8 @@
         {"name": "Haarverzorging", "icon": "💇", "keywords": ["shampoo", "conditioner", "haargel", "haarspray"]},
         {"name": "Huidverzorging", "icon": "🧴", "keywords": ["bodylotion", "douchegel", "zeep", "handzeep", "zonnebrand", "aftersun"]},
         {"name": "Mondverzorging", "icon": "🦷", "keywords": ["tandpasta", "tandenborstel", "mondwater", "floss"]},
-        {"name": "Persoonlijke hygiëne", "icon": "🚿", "keywords": ["deodorant", "scheermesje", "scheerschuim", "maandverband", "tampon"]}
+        {"name": "Persoonlijke hygiëne", "icon": "🚿", "keywords": ["deodorant", "scheermesje", "scheerschuim", "maandverband", "tampon"]},
+        {"name": "Gezondheid & vitamines", "icon": "💊", "keywords": ["vitamine", "multivitamine", "omega-3", "visolie", "lenzen", "lenzenvloeistof", "pleister", "paracetamol", "ibuprofen", "keelpastille", "neusspray", "zelftest", "magnesium"]}
       ],
       "keywords": ["shampoo", "tandpasta", "deodorant", "douchegel", "zeep", "bodylotion", "zonnebrand", "scheermesje"]
     },
@@ -232,7 +245,9 @@
         {"name": "Schoonmaakmiddelen", "icon": "🧹", "keywords": ["allesreiniger", "wc reiniger", "glasreiniger", "ontkalker", "bleek", "schoonmaakazijn"]},
         {"name": "Wasmiddelen", "icon": "🧺", "keywords": ["wasmiddel", "wasverzachter", "vlekkenverwijderaar"]},
         {"name": "Afwasmiddelen", "icon": "🍽️", "keywords": ["afwasmiddel", "vaatwas", "vaatwasmiddel", "vaatwastablet"]},
-        {"name": "Papier & Zakken", "icon": "🧻", "keywords": ["toiletpapier", "keukenpapier", "tissues", "vuilniszak", "aluminiumfolie", "huishoudfolie", "bakpapier"]}
+        {"name": "Papier & Zakken", "icon": "🧻", "keywords": ["toiletpapier", "keukenpapier", "tissues", "vuilniszak", "aluminiumfolie", "huishoudfolie", "bakpapier"]},
+        {"name": "Batterijen & elektra", "icon": "🔋", "keywords": ["batterij", "batterijen", "oplaadbaar", "lamp", "ledlamp", "verlengsnoer", "knoopcel"]},
+        {"name": "Keuken & tafel", "icon": "🍽️", "keywords": ["bord", "servet", "rietje", "cocktailprikker", "bakpapier", "aluminiumfolie", "vershoudfolie", "kaars", "beker", "bestek"]}
       ],
       "keywords": ["schoonmaak", "allesreiniger", "wasmiddel", "afwasmiddel", "toiletpapier", "keukenpapier", "vuilniszak"]
     },

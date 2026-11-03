@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Mijn boodschappen</h1>
+        <p class="sub" id="period-label">Overzicht van wat je uitgeeft</p>
+    </div>
+</div>
+<div id="filters"></div>
+<div id="kpis" class="kpis"></div>
+<div id="notice"></div>
+<div class="grid grid-2">
+    <section class="card">
+        <div class="card-head"><h2>Per categorie</h2><span class="spacer"></span><a class="small" href="/categories">Alle categorieën →</a></div>
+        <div class="card-body"><div class="chart-box"><canvas id="cat-chart" aria-label="Uitgaven per categorie"></canvas></div></div>
+    </section>
+    <section class="card">
+        <div class="card-head"><h2 id="trend-title">Per maand</h2></div>
+        <div class="card-body"><div class="chart-box"><canvas id="month-chart" aria-label="Uitgaven per maand"></canvas></div></div>
+    </section>
+</div>
+<div class="grid grid-2" style="margin-top:1rem">
+    <section class="card">
+        <div class="card-head"><h2>Categorieën</h2><span class="spacer"></span><span class="small muted">klik voor subcategorieën</span></div>
+        <div class="card-body flush" id="cat-list"></div>
+    </section>
+    <div class="stack">
+        <section class="card" id="budget-card"></section>
+        <section class="card">
+            <div class="card-head"><h2>Waar je boodschappen doet</h2></div>
+            <div class="card-body flush" id="stores"></div>
+        </section>
+        <section class="card">
+            <div class="card-head"><h2>Per dag van de week</h2></div>
+            <div class="card-body" id="weekdays"></div>
+        </section>
+    </div>
+</div>
+<section class="card" style="margin-top:1rem">
+    <div class="card-head"><h2>Waar het meeste geld naartoe gaat</h2><span class="spacer"></span><a class="small" href="/products">Alle producten →</a></div>
+    <div class="card-body flush" id="top-products"></div>
+</section>
+<div class="grid grid-2" style="margin-top:1rem">
+    <section class="card">
+        <div class="card-head"><h2>Slimmer kopen: grotere verpakking</h2></div>
+        <div class="card-body flush" id="pack-savings"></div>
+    </section>
+    <section class="card">
+        <div class="card-head"><h2>Duurder geworden</h2><span class="spacer"></span><span class="info" title="Betaalde prijs per stuk (incl. bonuskorting), eerste kwart van je aankopen vergeleken met het laatste kwart, per exacte productnaam.">i</span></div>
+        <div class="card-body flush" id="price-rising"></div>
+    </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/dashboard.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

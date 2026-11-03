@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Bonnen{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Bonnen</h1>
+        <p class="sub">Alle facturen en kassabonnen, met controle of ze kloppen</p>
+    </div>
+    <div class="row">
+        <a class="btn" href="/api/export/bonnen.csv">Exporteer (CSV)</a>
+        <a class="btn primary" href="/import">Bonnen importeren</a>
+    </div>
+</div>
+<div id="filters"></div>
+<div class="filters" id="search-bar"></div>
+<div id="summary" class="kpis"></div>
+<section class="card"><div class="card-body flush" id="list"></div></section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/receipts.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

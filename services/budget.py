@@ -3,7 +3,7 @@ Budget Service for Appestat.
 Handles category and product-level budgets, tracking, and alerts.
 """
 
-from datetime import datetime, date
+from datetime import date
 from typing import Dict, List, Optional
 from pathlib import Path
 
@@ -11,6 +11,18 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import get_connection
+from services import metrics
+
+
+def ensure_extra_costs_category() -> None:
+    """'Bijkomende kosten' (statiegeld, bezorging, abonnementen) is budgetable like a category."""
+    conn = get_connection()
+    conn.execute("""
+        INSERT OR IGNORE INTO categories (name, color, icon, is_system, sort_order)
+        VALUES (?, '#78909C', '🧾', 1, 999)
+    """, (metrics.EXTRA_COSTS_CATEGORY,))
+    conn.commit()
+    conn.close()
 
 
 class BudgetService:
@@ -45,32 +57,9 @@ class BudgetService:
         return dict(period) if period else None
     
     def get_category_spending(self, year: int) -> Dict[str, Dict]:
-        """Get actual spending per category for a year."""
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT 
-                COALESCE(p.user_category, p.auto_category) as category,
-                SUM(p.price) as total_spent,
-                COUNT(*) as item_count
-            FROM products p
-            JOIN invoices i ON p.invoice_id = i.id
-            WHERE strftime('%Y', i.invoice_date) = ?
-            GROUP BY COALESCE(p.user_category, p.auto_category)
-            ORDER BY total_spent DESC
-        """, (str(year),))
-        
-        result = {}
-        for row in cursor.fetchall():
-            if row['category']:
-                result[row['category']] = {
-                    'spent': row['total_spent'],
-                    'count': row['item_count']
-                }
-        
-        conn.close()
-        return result
+        """Actual spending per category for a year (services.metrics, incl. Bijkomende kosten)."""
+        return {name: {'spent': v['total'], 'count': v['count']}
+                for name, v in metrics.category_totals(year).items()}
     
     def get_category_budgets(self, year: int) -> List[Dict]:
         """Get all category budgets for a year with actual spending."""
@@ -78,54 +67,27 @@ class BudgetService:
         if not period:
             return []
         
+        ensure_extra_costs_category()
+        current = metrics.category_totals(year)
+        reference = metrics.category_totals(year - 1)
+
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # Get reference year spending for comparison
-        reference_year = year - 1
-        
         cursor.execute("""
-            WITH current_spending AS (
-                SELECT 
-                    COALESCE(p.user_category, p.auto_category) as category,
-                    SUM(p.price) as current_spent
-                FROM products p
-                JOIN invoices i ON p.invoice_id = i.id
-                WHERE strftime('%Y', i.invoice_date) = ?
-                GROUP BY COALESCE(p.user_category, p.auto_category)
-            ),
-            reference_spending AS (
-                SELECT 
-                    COALESCE(p.user_category, p.auto_category) as category,
-                    SUM(p.price) as reference_spent
-                FROM products p
-                JOIN invoices i ON p.invoice_id = i.id
-                WHERE strftime('%Y', i.invoice_date) = ?
-                GROUP BY COALESCE(p.user_category, p.auto_category)
-            )
-            SELECT 
-                c.id as category_id,
-                c.name as category_name,
-                c.icon,
-                c.color,
-                bc.target_amount,
-                bc.warning_threshold,
-                COALESCE(cs.current_spent, 0) as current_spent,
-                COALESCE(rs.reference_spent, 0) as reference_spent
+            SELECT c.id as category_id, c.name as category_name, c.icon, c.color,
+                   bc.target_amount, bc.warning_threshold
             FROM categories c
-            LEFT JOIN budget_categories bc ON bc.category_id = c.id 
-                AND bc.period_id = ?
-            LEFT JOIN current_spending cs ON cs.category = c.name
-            LEFT JOIN reference_spending rs ON rs.category = c.name
-            WHERE COALESCE(cs.current_spent, 0) > 0 
-               OR COALESCE(rs.reference_spent, 0) > 0
-               OR bc.target_amount IS NOT NULL
-            ORDER BY COALESCE(rs.reference_spent, 0) DESC
-        """, (str(year), str(reference_year), period['id']))
-        
+            LEFT JOIN budget_categories bc ON bc.category_id = c.id AND bc.period_id = ?
+        """, (period['id'],))
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+
         results = []
-        for row in cursor.fetchall():
-            data = dict(row)
+        for data in sorted(rows, key=lambda r: -reference.get(r['category_name'], {}).get('total', 0)):
+            data['current_spent'] = current.get(data['category_name'], {}).get('total', 0.0)
+            data['reference_spent'] = reference.get(data['category_name'], {}).get('total', 0.0)
+            if not (data['current_spent'] or data['reference_spent'] or data['target_amount'] is not None):
+                continue
             
             # Calculate progress percentage
             if data['target_amount'] and data['target_amount'] > 0:
@@ -140,10 +102,9 @@ class BudgetService:
                 ) * 100
             else:
                 data['change_percentage'] = None
-            
+
             results.append(data)
-        
-        conn.close()
+
         return results
     
     def set_category_budget(
@@ -227,63 +188,23 @@ class BudgetService:
         """Get comprehensive budget dashboard data."""
         period = self.get_budget_period(year)
         reference_year = year - 1
-        
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        # Total spending this year
-        cursor.execute("""
-            SELECT SUM(p.price) as total
-            FROM products p
-            JOIN invoices i ON p.invoice_id = i.id
-            WHERE strftime('%Y', i.invoice_date) = ?
-        """, (str(year),))
-        current_total = cursor.fetchone()['total'] or 0
-        
-        # Total spending reference year
-        cursor.execute("""
-            SELECT SUM(p.price) as total
-            FROM products p
-            JOIN invoices i ON p.invoice_id = i.id
-            WHERE strftime('%Y', i.invoice_date) = ?
-        """, (str(reference_year),))
-        reference_total = cursor.fetchone()['total'] or 0
-        
-        # Get category budgets with spending
+
+        current = metrics.summary(year)
+        current_total = current['spent']
+        reference_total = metrics.summary(reference_year)['spent']
         category_budgets = self.get_category_budgets(year)
-        
-        # Calculate totals
         total_budget = sum(cb.get('target_amount') or 0 for cb in category_budgets)
-        total_spent = sum(cb.get('current_spent') or 0 for cb in category_budgets)
-        
-        # Get monthly trend
-        cursor.execute("""
-            SELECT 
-                strftime('%m', i.invoice_date) as month,
-                SUM(p.price) as total
-            FROM products p
-            JOIN invoices i ON p.invoice_id = i.id
-            WHERE strftime('%Y', i.invoice_date) = ?
-            GROUP BY strftime('%m', i.invoice_date)
-            ORDER BY month
-        """, (str(year),))
-        
-        monthly_spending = {row['month']: row['total'] for row in cursor.fetchall()}
-        
-        # Get budget alerts
+        total_spent = current_total
+        monthly_spending = {k[-2:]: v for k, v in metrics.monthly_spent(year).items()}
         alerts = self._get_active_alerts(year)
-        
-        conn.close()
-        
-        # Calculate days into year and projected annual
-        today = date.today()
-        if today.year == year:
-            days_elapsed = (today - date(year, 1, 1)).days + 1
-            days_in_year = 365
-            projected_annual = (current_total / days_elapsed) * days_in_year if days_elapsed > 0 else 0
-        else:
-            projected_annual = current_total
-        
+
+        # Same projection as the dashboard: average per calendar month so far x 12
+        projected_annual = metrics.prediction(year)['predicted_yearly'] if year >= date.today().year \
+            else current_total
+        # Budget pace: share of the year's budget you may have used by the latest receipt
+        months_done = current['months'] if year >= date.today().year else 12
+        expected_by_now = total_budget * months_done / 12 if total_budget else None
+
         return {
             "period": period,
             "current_year": year,
@@ -297,7 +218,10 @@ class BudgetService:
             "monthly_spending": monthly_spending,
             "alerts": alerts,
             "savings_vs_last_year": reference_total - current_total,
-            "on_track": total_spent <= total_budget if total_budget > 0 else None
+            "expected_by_now": round(expected_by_now, 2) if expected_by_now is not None else None,
+            "months_elapsed": months_done,
+            # On track = not ahead of the linear budget pace (not just "below the full-year budget")
+            "on_track": total_spent <= expected_by_now if expected_by_now else None
         }
     
     def _get_active_alerts(self, year: int) -> List[Dict]:

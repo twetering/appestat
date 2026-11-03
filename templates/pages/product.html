@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Product{% endblock %}
+{% block content %}
+<div id="page" data-id="{{ catalog_id }}"></div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/product.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

@@ -767,6 +767,14 @@ def _action_targets(text: str, items: List[PlusItem]) -> List[PlusItem]:
                                    for nw in name_words):
                 hits.append(item)
                 break
+    if not hits:
+        # "ACTIE RED BULL" on a receipt that prints the can as "ENERGY DRINK"
+        from importers.common import DISCOUNT_SYNONYMS
+        key = re.sub(r"[^a-z0-9]", "", _ascii(text).lower())
+        for brand, terms in DISCOUNT_SYNONYMS.items():
+            if brand in key:
+                hits = [i for i in goods if any(t in i.raw_name.replace(" ", "").lower() for t in terms)]
+                break
     return hits
 
 

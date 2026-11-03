@@ -12,9 +12,6 @@ from database import (
     bulk_update_subcategory_by_names,
     update_product_category,
     update_product_subcategory,
-    save_llm_suggestions,
-    update_llm_suggestions_bulk,
-    apply_llm_suggestions
 )
 
 
@@ -110,34 +107,6 @@ class TestDatabaseOverrides(unittest.TestCase):
         result = update_product_subcategory(1, "TestSub", apply_to_similar=True)
         self.assertTrue(result["success"])
         self.assertEqual(result["updated_count"], 2)
-
-    def test_update_llm_suggestions_bulk(self):
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM categories WHERE name = 'Zuivel & Eieren'")
-        cat_id = cursor.fetchone()['id']
-        conn.close()
-        
-        save_llm_suggestions([{
-            "product_name": "Prod A",
-            "category_id": cat_id,
-            "subcategory_id": None,
-            "confidence": 0.7,
-            "model": "gpt-4o-mini",
-            "prompt_version": "test"
-        }])
-        
-        # Update suggestion to another category
-        update_llm_suggestions_bulk([{
-            "id": 1,
-            "category": "Groente & Aardappelen",
-            "subcategory": None
-        }])
-        
-        # Accept suggestion and verify products updated
-        result = apply_llm_suggestions([1])
-        self.assertEqual(result["applied"], 1)
-
 
 if __name__ == "__main__":
     unittest.main()

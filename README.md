@@ -1,98 +1,74 @@
-# 🧠 Appestat - Appie Analytics
+# 🧠 Appestat
 
-Appestat is een persoonlijke "voedsel-accountant" die je helpt je Albert Heijn-uitgaven te analyseren. De naam verwijst naar de **appestat**, het mechanisme in de hersenen dat de eetlust reguleert.
+Appestat is een persoonlijke "voedsel-accountant": hij leest je boodschappenbonnen (Albert Heijn, PLUS)
+en laat precies zien waar je geld naartoe gaat. De naam verwijst naar de **appestat**, het mechanisme in de
+hersenen dat de eetlust reguleert.
 
-Deze applicatie geeft je diepgaand inzicht in je uitgaven, helpt je patronen herkennen, en stimuleert gezonder en/of prijsbewuster boodschappen te doen.
+![Appestat](https://img.shields.io/badge/Appestat-3.0-00A0DC)
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![Privacy](https://img.shields.io/badge/Privacy-lokaal-green)
 
-![Appestat](https://img.shields.io/badge/Appestat-Food%20Regulator-00ADE6)
-![Python](https://img.shields.io/badge/Python-3.9+-blue)
-![Privacy](https://img.shields.io/badge/Privacy-Local%20Only-green)
-![AI Native](https://img.shields.io/badge/AI%20Native-Agent%20Ready-purple)
+## ✨ Wat Appestat 3.0 doet
 
-## ✨ Kenmerken
+**Cijfers die kloppen**
+- Elke bon wordt gecontroleerd: producten + bijkomende kosten (statiegeld, bezorging, abonnement) + sparen
+  (koopzegels, PLUSPunten) tellen tot op de cent op tot het betaalde bedrag. Bonnen die niet sluiten worden
+  gemarkeerd in plaats van stil meegeteld.
+- "Uitgegeven" betekent overal hetzelfde: betaald min gespaard. Categorieën, maanden en jaren tellen daar
+  precies tot op.
 
-### 📊 Inzicht & Regulatie
-- **Totaaloverzicht** van al je voedseluitgaven.
-- **Categorie-analyse**: Zie precies hoeveel je uitgeeft aan snacks, frisdrank, vs. groente en fruit.
-- **30-jaar projectie**: Een confronterende blik op de lange termijn kosten van je huidige gewoontes.
-- **Besparingsadviezen**: Concrete tips om gezonder te eten én goedkoper boodschappen te doen.
+**Eén product is één product**
+- Een productcatalogus koppelt alle schrijfwijzen en verpakkingen: "Red Bull 8-pack", "…24-pack" en
+  "RED BULL" op een kassabon zijn één product met varianten en een **prijs per stuk**.
+- Productpagina's met prijsverloop per stuk, de voordeligste verpakking en AH tegenover PLUS.
 
-### 🔍 Geavanceerde Analyse
-- **Productdetails**: Bekijk prijshistorie en inflatie per product.
-- **A-merk vs Huismerk**: Ontdek waar je onnodig te veel betaalt.
-- **Jaaroverzichten**: Vergelijk je gedrag over de jaren heen.
+**Slimme categorisatie**
+- Nieuwe producten krijgen hun categorie › subcategorie van de OpenAI Decisions API (vaste keuzelijst,
+  dus nooit een subcategorie buiten zijn categorie). Twijfelgevallen komen in de **reviewlijst**.
+- Jouw eigen keuzes gaan altijd voor en gelden voor het product op al je bonnen, ook toekomstige.
+- Zonder OpenAI-sleutel werkt alles met trefwoordregels.
 
-### 🛠️ Technische Kracht
-- **PDF & Bonnen Import**: Verwerkt automatisch je Albert Heijn facturen en kassabonnen.
-- **Slimme Categorisatie**: 3-tier systeem met keywords, user overrides, en LLM fallback.
-- **AI-Powered**: Optionele OpenAI integratie voor intelligente categorisatie van onbekende producten.
-- **Privacy First**: Alle data blijft 100% lokaal op je eigen computer. Geen cloud, geen tracking.
-
-### 🤖 AI Agent Native
-- Uitgebreide API voor AI-agents (zie `API.md`)
-- Gedocumenteerd voor Claude, GPT, en andere AI-assistenten (zie `CLAUDE.md`)
-- Complete user stories en requirements (zie `REQUIREMENTS.md`)
-
----
+**Inzichten**
+- Dashboard per jaar of alles, per winkel; budget met tempo; jaarvergelijking; prijsstijgingen per stuk;
+  wat een grotere verpakking had bespaard; 30-jaarsprojectie.
 
 ## 🚀 Installatie
 
-Je kunt Appestat lokaal draaien:
+```bash
+git clone https://github.com/twetering/appestat.git
+cd appestat
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+echo "OPENAI_API_KEY=sk-..." > .env      # optioneel, voor AI-categorisatie
+python app.py                            # http://localhost:5050
+```
 
-1. **Vereisten**
-   - Python 3.9 of hoger
+Ontwikkelen: `pip install -r requirements-dev.txt`, `APPESTAT_DEBUG=1 python app.py`, tests met `pytest`.
 
-2. **Installatie**
-   ```bash
-   # Clone de repo
-   git clone https://github.com/twetering/appestat.git
-   cd appestat
+## 📥 Bonnen importeren
 
-   # Maak virtual environment (optioneel maar aanbevolen)
-   python3 -m venv venv
-   source venv/bin/activate
+Sleep bestanden op de pagina **Importeren**, of zet ze in `data/invoices/` (submappen mogen) en klik op
+"Map opnieuw doorzoeken".
 
-   # Installeer dependencies
-   pip install -r requirements.txt
-   ```
+| Bron | Bestand |
+|---|---|
+| Albert Heijn online-bestelling | factuur-PDF (`1069835-00414.pdf`) |
+| Albert Heijn winkel | kassabon-PDF uit de AH-app (`AH_kassabon_….pdf`) |
+| PLUS (en andere winkels) | foto van de kassabon (HEIC/JPG/PNG), bv. in `data/invoices/plus/` |
 
-3. **OpenAI Configuratie** (optioneel, voor AI-categorisatie)
-   ```bash
-   # Maak een .env bestand
-   echo "OPENAI_API_KEY=sk-your-api-key-here" > .env
-   ```
-   Haal je API key op via [platform.openai.com](https://platform.openai.com/api-keys)
+Foto's worden lokaal gelezen met Apple Vision (macOS, Xcode Command Line Tools). Alleen als die lezing niet
+sluit, gaat de foto naar OpenAI als vangnet. Dezelfde bon twee keer importeren (ook als ander bestand) wordt
+herkend.
 
-4. **Starten**
-   ```bash
-   python app.py
-   ```
-   Ga naar [http://localhost:5050](http://localhost:5050)
+## 🔒 Privacy
 
----
+Alle data staat lokaal in `data/appestat.db`. Naar OpenAI gaan alleen productnamen (voor categorisatie en
+normalisatie) en, uitsluitend als vangnet, foto's die lokaal niet goed gelezen konden worden.
 
-## 📥 Je Data Importeren
+## 🤖 Voor AI-agents
 
-Appestat werkt met je eigen data. Zo importeer je je bonnen:
-
-1. **Online facturen**: Download je facturen van bestellingen (PDF) via je online Albert Heijn account en plaats ze in `data/invoices/`.
-2. **Kassabonnen**: Kassabonnen van Albert Heijn aankopen in de winkel plaats je in `data/bonnen/`. Je kunt de kassabonnen downloaden via je Albert Heijn app (iOS of Android). De snelste manier is via 'Deel Kassabon' en dan 'Save to files' waarbij je een iCloud-map kan selecteren. Alle PDF's vind je op je laptop dan terug op je bijvoorbeeld je Desktop of Downloads.
-3. **Import starten**: 
-   - Start de app en navigeer naar **Facturen**.
-   - Klik op de **Importeer** knop.
-   - De app verwerkt alle nieuwe bestanden automatisch.
-
----
-
-## 🤝 Bijdragen
-
-Appestat is open source. Heb je ideeën om de "appestat" van gebruikers beter te reguleren? 
-- Verbeterde categorisatie-regels
-- Nieuwe psychologische inzichten/features
-- Ondersteuning voor andere supermarkten
-
-Pull requests zijn welkom! https://github.com/twetering/appestat
+Zie `CLAUDE.md` (architectuur en regels) en `API.md` (endpoints).
 
 ## 📝 Licentie
 
-Dit project is beschikbaar onder de MIT licentie. Zie `LICENSE` voor details.
+MIT, zie `LICENSE`.

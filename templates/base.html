@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Appestat{% endblock %} · Appestat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v={{ asset_version }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="app-header">
+        <div class="bar">
+            <a class="logo" href="/"><span class="logo-mark">A</span>Appestat</a>
+            <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav">☰ Menu</button>
+            <nav class="nav" id="main-nav" aria-label="Hoofdmenu">
+                {% set items = [
+                    ('dashboard', '/', 'Dashboard'),
+                    ('products', '/products', 'Producten'),
+                    ('receipts', '/receipts', 'Bonnen'),
+                    ('categories', '/categories', 'Categorieën'),
+                    ('review', '/review', 'Review'),
+                    ('budget', '/budget', 'Budget'),
+                    ('years', '/years', 'Jaren'),
+                    ('import', '/import', 'Importeren'),
+                ] %}
+                {% for key, href, label in items %}
+                <a href="{{ href }}" class="{{ 'active' if active == key else '' }}"
+                   {% if active == key %}aria-current="page"{% endif %} data-nav="{{ key }}">{{ label }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+    </header>
+
+    <main id="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="app-footer">
+        <div class="bar">
+            <span>Appestat 3.0 · je boodschappen, lokaal geanalyseerd</span>
+            <span class="spacer"></span>
+            <a href="/import">Bonnen importeren</a>
+            <a href="/api/export/regels.csv">Exporteer alle aankopen (CSV)</a>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { api } from "{{ url_for('static', filename='js/core.js') }}";
+        const toggle = document.querySelector('.nav-toggle');
+        const nav = document.getElementById('main-nav');
+        toggle.addEventListener('click', () => {
+            const open = nav.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', String(open));
+        });
+        api('/api/status').then(s => {
+            if (!s.review_products) return;
+            const link = document.querySelector('[data-nav="review"]');
+            const dot = document.createElement('span');
+            dot.className = 'badge-dot';
+            dot.textContent = s.review_products > 99 ? '99+' : String(s.review_products);
+            dot.title = `${s.review_products} producten om te controleren`;
+            link.append(dot);
+        }).catch(() => {});
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

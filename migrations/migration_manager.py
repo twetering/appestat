@@ -78,11 +78,18 @@ def run_migration(version: str, name: str, up_sql: str, description: str = ""):
     cursor = conn.cursor()
     
     try:
-        # Execute each statement separately
+        # Execute each statement separately. A fresh database already gets some of these
+        # columns/tables from init_database(), so "already exists" is not an error here.
         for statement in up_sql.split(';'):
             statement = statement.strip()
-            if statement:
+            if not statement:
+                continue
+            try:
                 cursor.execute(statement)
+            except sqlite3.OperationalError as e:
+                if "duplicate column" in str(e) or "already exists" in str(e):
+                    continue
+                raise
         
         conn.commit()
         record_migration(version, name)
@@ -139,7 +146,15 @@ def run_all_migrations():
     from migrations import v007_add_products_updated_at
     from migrations import v008_add_llm_suggestions
     from migrations import v009_dedupe_product_overrides
-    
+    from migrations import v010_v3_core
+    from migrations import v011_catalog_variants
+    from migrations import v012_product_alias_key
+    from migrations import v013_line_pack_count
+    from migrations import v014_catalog_suggestions
+    from migrations import v015_seed_taxonomy
+    from migrations import v016_indexes
+    from migrations import v017_sport_nutrition
+
     migration_modules = [
         v001_add_source_columns,
         v002_add_category_keywords_table,
@@ -150,6 +165,14 @@ def run_all_migrations():
         v007_add_products_updated_at,
         v008_add_llm_suggestions,
         v009_dedupe_product_overrides,
+        v010_v3_core,
+        v011_catalog_variants,
+        v012_product_alias_key,
+        v013_line_pack_count,
+        v014_catalog_suggestions,
+        v015_seed_taxonomy,
+        v016_indexes,
+        v017_sport_nutrition,
     ]
     
     for module in migration_modules:

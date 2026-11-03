@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Bon{% endblock %}
+{% block content %}
+<div id="page" data-id="{{ invoice_id }}"></div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/receipt.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

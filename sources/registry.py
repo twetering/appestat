@@ -79,19 +79,7 @@ def get_registry() -> SourceRegistry:
     if _registry is None:
         _registry = SourceRegistry()
         
-        # Register built-in sources
-        try:
-            from sources.ah_online import AHOnlineSource
-            _registry.register(AHOnlineSource())
-        except ImportError:
-            pass
-        
-        try:
-            from sources.ah_receipt import AHReceiptSource
-            _registry.register(AHReceiptSource())
-        except ImportError:
-            pass
-
+        # Register built-in sources (AH PDFs are parsed by importers/, see parser.py)
         try:
             from sources.ah_api import AHApiSource
             _registry.register(AHApiSource())

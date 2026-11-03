@@ -5,6 +5,7 @@
       "name": "appestat",
       "runtimeExecutable": "venv/bin/python",
       "runtimeArgs": ["app.py"],
+      "env": { "APPESTAT_DEBUG": "1" },
       "port": 5050
     }
   ]

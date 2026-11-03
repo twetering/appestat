@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Review{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Review</h1>
+        <p class="sub">Producten waarvan de categorie een controle verdient, gesorteerd op wat ze je kosten</p>
+    </div>
+    <div class="row" id="actions"></div>
+</div>
+<div id="intro"></div>
+<section class="card"><div class="card-body flush" id="list"></div></section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/review.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

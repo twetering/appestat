@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Budget{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Budget</h1>
+        <p class="sub">Een jaarbudget per categorie, met het tempo waarin je het uitgeeft</p>
+    </div>
+    <div class="row" id="year-switch"></div>
+</div>
+<div id="kpis" class="kpis"></div>
+<div id="alerts"></div>
+<section class="card">
+    <div class="card-head"><h2>Per categorie</h2><span class="spacer"></span><div id="generate"></div></div>
+    <div class="card-body flush" id="list"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/budget.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

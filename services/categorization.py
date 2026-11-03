@@ -3,10 +3,8 @@ Categorization Service for Appestat.
 Implements 3-tier categorization: User Overrides -> Keywords -> LLM Fallback
 """
 
-import os
-import json
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from datetime import datetime
 from pathlib import Path
 
@@ -140,9 +138,8 @@ class CategorizationService:
                     pass
             
             if matched:
-                # Update times_applied counter
-                self._update_override_usage(override['product_name_pattern'])
-                
+                # No usage-counter write here: categorize() must stay read-only (it runs
+                # for every line during imports and previews)
                 return {
                     "category": override['category_name'],
                     "subcategory": override.get('subcategory_name')
@@ -212,14 +209,10 @@ class CategorizationService:
             if form in product_name:
                 return True
         
-        # Also check words in product name
-        words = product_name.split()
-        for word in words:
-            # Check if keyword is start of word (handles "banaan" in "bananensmoothie")
-            if word.startswith(keyword) or keyword.startswith(word[:4]) if len(word) >= 4 else False:
-                return True
-        
-        return False
+        # Keyword at the start of a word handles compounds ("banaan" in "bananensmoothie").
+        # Never the other way round: matching only a word's first letters made "rode druiven"
+        # hit "rode wijn" and "paprikamix" hit "paprikapoeder".
+        return any(word.startswith(keyword) for word in product_name.split())
     
     def _update_override_usage(self, pattern: str):
         """Update the usage counter for an override."""
@@ -310,10 +303,15 @@ class CategorizationService:
         
         conn.commit()
         conn.close()
-        
+
         # Invalidate cache
         self._cache_timestamp = None
-        
+
+        if apply_retroactively:
+            # Product-level: the choice covers every spelling/pack and future receipts
+            from database import _apply_category_to_catalog
+            _apply_category_to_catalog(list({normalized_name, product_name}), category, subcategory)
+
         return {
             "success": True,
             "updated_count": updated_count,
@@ -344,113 +342,6 @@ class CategorizationService:
                 "total": len(products),
                 "categorized": len(products) - len(uncategorized),
                 "uncategorized": len(uncategorized)
-            }
-        }
-    
-    async def categorize_with_llm(
-        self, 
-        products: List[str], 
-        save_as_keywords: bool = True
-    ) -> Dict[str, Dict]:
-        """
-        Use OpenAI GPT to categorize products that couldn't be matched by keywords.
-        Batches up to 100 products per API call for efficiency.
-        """
-        import openai
-        
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key or api_key.startswith('OPENAI_API_KEY='):
-            # Handle malformed env var
-            if '=' in api_key:
-                api_key = api_key.split('=', 1)[1]
-        
-        if not api_key:
-            return {"error": "OPENAI_API_KEY not configured", "results": {}}
-        
-        client = openai.OpenAI(api_key=api_key)
-        
-        # Get available categories
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM categories ORDER BY sort_order")
-        categories = [row['name'] for row in cursor.fetchall()]
-        conn.close()
-        
-        results = {}
-        batch_size = 50  # Conservative batch size
-        
-        for i in range(0, len(products), batch_size):
-            batch = products[i:i + batch_size]
-            
-            prompt = f"""Je bent een expert in het categoriseren van Nederlandse supermarktproducten.
-Categoriseer elk product in PRECIES één van deze categorieën:
-{json.dumps(categories, ensure_ascii=False)}
-
-Producten om te categoriseren:
-{json.dumps(batch, ensure_ascii=False)}
-
-Antwoord ALLEEN met valid JSON in dit format (geen andere tekst):
-{{"product_naam": "categorie_naam", ...}}
-
-Regels:
-- Gebruik EXACT de categorienamen uit de lijst hierboven
-- Elk product moet precies één categorie krijgen
-- Bij twijfel, kies de meest logische categorie
-- "Overig" alleen als het echt nergens past"""
-
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-4o",  # Using gpt-4o as gpt-5 may not exist yet
-                    messages=[
-                        {"role": "system", "content": "Je categoriseert supermarktproducten. Antwoord alleen met JSON."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.1,
-                    response_format={"type": "json_object"}
-                )
-                
-                response_text = response.choices[0].message.content
-                batch_results = json.loads(response_text)
-                
-                for product, category in batch_results.items():
-                    if category in categories:
-                        results[product] = {
-                            "category": category,
-                            "subcategory": None,
-                            "source": "llm"
-                        }
-                        
-                        # Optionally save as keywords for future use
-                        if save_as_keywords:
-                            self.learn_from_correction(
-                                product, category, None, 
-                                match_type='exact', 
-                                apply_retroactively=True
-                            )
-                    else:
-                        results[product] = {
-                            "category": "Overig",
-                            "subcategory": None,
-                            "source": "llm_fallback"
-                        }
-                
-            except Exception as e:
-                print(f"LLM categorization error: {e}")
-                # Mark batch as failed
-                for product in batch:
-                    results[product] = {
-                        "category": "Overig",
-                        "subcategory": None,
-                        "source": "error",
-                        "error": str(e)
-                    }
-        
-        return {
-            "results": results,
-            "stats": {
-                "total": len(products),
-                "categorized": sum(1 for r in results.values() if r.get('source') == 'llm'),
-                "errors": sum(1 for r in results.values() if r.get('source') == 'error')
             }
         }
     

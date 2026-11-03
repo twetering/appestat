@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Producten{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Producten</h1>
+        <p class="sub">Elk product één keer, met al zijn verpakkingen en schrijfwijzen</p>
+    </div>
+    <a class="btn" href="/review">Producten controleren</a>
+</div>
+<div id="filters"></div>
+<div class="filters" id="search-bar"></div>
+<div id="summary" class="kpis"></div>
+<section class="card"><div class="card-body flush" id="list"></div></section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pages/products.js') }}?v={{ asset_version }}"></script>
+{% endblock %}
